@@ -1,0 +1,69 @@
+ticker,bstock_symbol,project_name_per_doc,bsc_contract_address,onchain_name,onchain_symbol,decimals,symbol_match
+AAOI,AAOIB,Applied Optoelectronics,0x10343ef7da3301493d7ecb647d68a288c6c1db2f,Applied Optoelectronics,AAOIB,18,True
+AAPL,AAPLB,Apple,0x431a3bee82e2ca41e49895cbece5bb0f76a89b7a,Apple,AAPLB,18,True
+ALAB,ALABB,Astera Labs,0x1282493ede6a22753d45cb2c0fdbd8d35e97555a,Astera Labs,ALABB,18,True
+AMAT,AMATB,Applied Materials,0xa304bd78e739c0f777202b3eb73ac3736d1df801,Applied Materials,AMATB,18,True
+AMD,AMDB,Advanced Micro Devices,0x75fd4cf6f8392e41e70391d60c90c0d5211603a1,Advanced Micro Devices Inc,AMDB,18,True
+AMZN,AMZNB,Amazon,0x1a4b499833a79a09ad7cf1d42d7dacf71e92eb00,Amazon,AMZNB,18,True
+ARM,ARMB,ARM,0xd42a79ebb7f527f40faecd196ffb47ad5e8d6f8c,Arm,ARMB,18,True
+ASML,ASMLB,ASML,0xfbfb4f79cfb4c34dcd7c82bdee5a0fa199b2e7f9,ASML,ASMLB,18,True
+ASTS,ASTSB,AST SpaceMobile,0x58b6f5feeb8436489f5bf4a56619092b1fa8e777,AST SpaceMobile,ASTSB,18,True
+AVGO,AVGOB,Broadcom,0x76682c454467b3a1150ad8b6a92fc5ee2c21d7ed,Broadcom,AVGOB,18,True
+AXTI,AXTIB,AXT,0x9bdc8b470dbf89dbcb123587c6f5e49cca3463be,AXT,AXTIB,18,True
+BABA,BABAB,Alibaba,0x4ef9d3062c7f6eba4aae4990c5036598c6eff4ec,Alibaba,BABAB,18,True
+BE,BEB,Bloom Energy,0x5519de00f5388c17d886b97cb5d2d43a812a82bc,Bloom Energy,BEB,18,True
+BMNR,BMNRB,BitMine Immersion Technologies,0x3548da95a9effe481e8604664d75e95821e557f5,BitMine Immersion Technologies,BMNRB,18,True
+CBRS,CBRSB,Cerebras,0xe81c6bb0266cd68b4f17278531dd03ea1f12da4e,Cerebras,CBRSB,18,True
+COHR,COHRB,Coherent,0x5131859a059b2446abeefe0f5d313b3c54ff3d36,Coherent,COHRB,18,True
+COIN,COINB,Coinbase,0x585bde7c54abb5ccd7791f923d6c2187635f3952,Coinbase,COINB,18,True
+CRCL,CRCLB,Circle Internet Group,0x80f3d493ebce97e343c53d29a137942416b4ffc0,Circle Internet Group Inc.,CRCLB,18,True
+CRDO,CRDOB,Credo Technology,0x6e7d451f9d30327d32020f116fa79c23b24e9c8d,Credo Technology,CRDOB,18,True
+CRWV,CRWVB,CoreWeave,0x33e7317e17838fee56b10fe8d0b9ca6ca3090c95,CoreWeave,CRWVB,18,True
+DELL,DELLB,Dell,0x0e7a51966c66648999d506e1372efdea1b78cb0b,Dell,DELLB,18,True
+DJT,DJTB,Trump Media & Technology Group,0xf2ec508422174ee564de98187db9359d318afb6b,Trump Media & Technology Group Corp,DJTB,18,True
+DRAM,DRAMB,Roundhill Memory ETF,0x93862d63fd9fd488b1328e9b47717d75e994a84b,Roundhill Memory ETF,DRAMB,18,True
+EWY,EWYB,iShares MSCI South Korea ETF,0xbe82f76637dba2c114c41df856c2c51e522e2cb8,iShares MSCI South Korea ETF,EWYB,18,True
+FLNC,FLNCB,Fluence Energy,0x4af1d41cd9dd950dca43984b43aaa2a8702714ac,Fluence Energy,FLNCB,18,True
+GLW,GLWB,Corning,0x740e075cbbea22a082b9d6679e65e82767875b6a,Corning,GLWB,18,True
+GME,GMEB,GameStop,0x46ceefda28dd7207059ed19b0acdc026955bb15c,GameStop,GMEB,18,True
+GOOGL,GOOGLB,Alphabet,0x3f53de71c126bdabae20f9cd64848d317f6c3238,Alphabet,GOOGLB,18,True
+GS,GSB,Goldman Sachs,0x20cce6656e5f7f79f280e2d0f5db55b401bdbfce,Goldman Sachs,GSB,18,True
+HOOD,HOODB,Robinhood,0xa394dcea3fd3847fd793afbfd163e2e3858b7c65,Robinhood,HOODB,18,True
+IBM,IBMB,IBM,0xfa273b076feb8c0fb34e554ae341082323d016a3,IBM,IBMB,18,True
+INTC,INTCB,Intel,0xe614e2fc6c787035ff51f452e8e826bfd32d5283,Intel Corporation,INTCB,18,True
+INTW,INTWB,GraniteShares 2X Long INTC ETF,0x0735d9904b7e34e6fe39b0f66e00c111b3f2b681,GraniteShares 2X Long INTC ETF,INTWB,18,True
+IREN,IRENB,IREN Limited,0xfdc2f2cab77b28f7ef6c819a404706cfa9bca33b,IREN Limited,IRENB,18,True
+KORU,KORUB,South Korea Bull 3X ETF,0x1ffad32d69c5fead99f88c25ca0191edc3757636,South Korea Bull 3X ETF,KORUB,18,True
+LITE,LITEB,Lumentum,0x64748bea17b6d19e242adf20425de2440c656142,Lumentum Holdings,LITEB,18,True
+META,METAB,Meta,0x7425889fe94f9d693e8daefe88bcced6acfef4c0,Meta Platforms,METAB,18,True
+MRVL,MRVLB,Marvell Technology,0x16cd4fe7e8880ecc3ba222795229e20489fc2c76,Marvell Technology,MRVLB,18,True
+MSFT,MSFTB,Microsoft,0x80106cb3ead06659a5ad19df39d9b4733863b9b0,Microsoft,MSFTB,18,True
+MSTR,MSTRB,Strategy,0xe87afb3076aeb0f9b14e368de8145ae6a2826a14,Strategy Inc.,MSTRB,18,True
+MU,MUB,Micron Technology,0xcdf2f3e0fa43c47a6662a91c9e4a7c5f69762699,Micron Technology Inc,MUB,18,True
+MUU,MUUB,Direxion MU Bull 2X ETF,0x0bb3fa77e0809f42948e435f04883c25415e8263,Direxion MU Bull 2X ETF,MUUB,18,True
+MVLL,MVLLB,GraniteShares 2X Long MRVL ETF,0x7c26a12f20507e2cee22ceebed9e88fda47f866c,GraniteShares 2X Long MRVL ETF,MVLLB,18,True
+NBIS,NBISB,Nebius,0xe256bc2a4f5297f8ba6f043f180a46300ecbcbb1,Nebius,NBISB,18,True
+NFLX,NFLXB,Netflix,0xd6829ea836b6fa224d099d40e54b31262f874631,Netflix,NFLXB,18,True
+NOK,NOKB,Nokia,0x7c4d7a180d737dd5a70d8065a90e6746a69c37ea,Nokia,NOKB,18,True
+NVDA,NVDAB,NVIDIA,0x02fca66c1d1afb4e2a7884261eb00f63598a7436,NVIDIA Corp,NVDAB,18,True
+ORCL,ORCLB,Oracle,0x4684d9887fc1c71cba7bab8e88835cec217eb598,Oracle,ORCLB,18,True
+PLTR,PLTRB,Palantir,0x0ca5d51d0277bd006fd9607d3e560785ebad8222,Palantir Technologies,PLTRB,18,True
+PYPL,PYPLB,Paypal,0x2806a561fc1f9259b2d54a281796bde0d92762ae,Paypal,PYPLB,18,True
+QCOM,QCOMB,Qualcomm,0x5f7a56e877b9130608bf8be962621011182fefe1,Qualcomm,QCOMB,18,True
+QNT,QNTB,Quantinuum,0xd721c192d612db77621df57a9fab38418033c02e,Quantinuum,QNTB,18,True
+QQQ,QQQB,Invesco QQQ Trust,0x205812cdbed920aff76c6580abd681a46d11efc7,Invesqo QQQ,QQQB,18,True
+RKLB,RKLBB,Rocket Lab,0xc8da12cbcce7c45180692a6420b0076e03a5179a,Rocket Lab,RKLBB,18,True
+SKHY,SKHYB,SK Hynix,0xca750ef65f295bbecd685abf54e82caf297bdb61,SK Hynix,SKHYB,18,True
+SMCI,SMCIB,Super Micro Computer,0x387dea1d2772d716d081a29116f3effa0ffe1f36,Super Micro Computer,SMCIB,18,True
+SMH,SMHB,VanEck Semiconductor ETF,0xbe1fced7047fdce935f45700727845df2c76877a,VanEck Semiconductor ETF,SMHB,18,True
+SNDK,SNDKB,SanDisk,0x3ee4df61bd4f867e349beae8bfe07bc31b4850fb,Sandisk Corporation,SNDKB,18,True
+SNXX,SNXXB,Tradr 2X Long SNDK ETF,0x9e82e3da8f1115b73d24bb24113ab836ffdab6b6,Tradr 2X Long SNDK ETF,SNXXB,18,True
+SOXL,SOXLB,Semicon Bull 3X ETF,0xd97d097a89113fa59b76c572e5b2eb647e8eefaf,Semicon Bull 3X ETF,SOXLB,18,True
+SOXS,SOXSB,Direxion Semiconductor Bear 3X ETF,0xe28cd11c99af2df76bb8ada4cd0ef3904378280f,Direxion Semiconductor Bear 3X ETF,SOXSB,18,True
+SPCX,SPCXB,SpaceX,0xbe9d156892e55e7154bcd3cb0fea677f9d3103e1,SpaceX,SPCXB,18,True
+SPY,SPYB,SPY,0x7138b48df7d98d7e3cc221bfe7192d0a178182d8,SPY,SPYB,18,True
+TQQQ,TQQQB,ProShares UltraPro QQQ,0x462b5f13b7c7748279358962925c5de83bb9e598,ProShares UltraPro QQQ,TQQQB,18,True
+TSLA,TSLAB,Tesla,0x5b1910eaad6450e50f816082aa078c41f10c292f,"Tesla, Inc.",TSLAB,18,True
+TSM,TSMB,TSMC,0xab78b89b5bb00236be0b4b20704cbfa04efc711c,TSMC,TSMB,18,True
+USAR,USARB,USA Rare Earth,0xcd345d4450e04cdef422a60b97d9265d24e0bcee,USA Rare Earth,USARB,18,True
+WDC,WDCB,Western Digital,0xebe29695f8047c13d36e7a790ca8c1b239ffad1c,Western Digital,WDCB,18,True
