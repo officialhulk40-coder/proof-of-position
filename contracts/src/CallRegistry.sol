@@ -94,4 +94,87 @@ contract CallRegistry {
         emit OwnershipTransferred(owner, newOwner);
         owner = newOwner;
     }
+
+    // ───────────────────────────── posting ─────────────────────────────
+
+    /// @notice Post a LONG call. Reverts "No position, no call." unless the caller holds `amount` right now.
+    function post(address token, uint256 amount, string calldata note) external returns (uint256 callId) {
+        return _post(token, amount, false, 0, note);
+    }
+
+    /// @notice Post as an ERC-8004 agent; msg.sender must be the agent's registered wallet.
+    function postAsAgent(address token, uint256 amount, uint256 agentId, string calldata note)
+        external
+        returns (uint256 callId)
+    {
+        if (IAgentIdentityRegistry(identityRegistry).getAgentWallet(agentId) != msg.sender) {
+            revert NotAgentWallet(agentId);
+        }
+        return _post(token, amount, true, agentId, note);
+    }
+
+    function _post(address token, uint256 amount, bool hasAgent, uint256 agentId, string calldata note)
+        internal
+        returns (uint256 callId)
+    {
+        BalanceModel model = tokenModel[token];
+        if (model == BalanceModel.UNLISTED) revert TokenNotListed(token);
+        if (amount == 0) revert ZeroAmount();
+        uint256 noteLength = bytes(note).length;
+        if (noteLength > MAX_NOTE_BYTES) revert NoteTooLong(noteLength);
+        uint256 openPlusOne = _openCallPlusOne[msg.sender][token];
+        if (openPlusOne != 0) revert CallAlreadyOpen(openPlusOne - 1);
+
+        require(IBalanceToken(token).balanceOf(msg.sender) >= amount, "No position, no call.");
+
+        uint256 declaredBase = amount;
+        if (model == BalanceModel.XSTOCK) {
+            declaredBase = IXStockShares(token).getSharesByUnderlyingAmount(amount);
+            if (declaredBase == 0) revert ZeroAmount();
+        }
+
+        callId = _calls.length;
+        _calls.push(
+            Call({
+                caller: msg.sender,
+                token: token,
+                model: model,
+                hasAgent: hasAgent,
+                heldThrough: false,
+                exitStatus: Status.HOLDING,
+                postedBlock: uint64(block.number),
+                postedAt: uint64(block.timestamp),
+                closedBlock: 0,
+                exitBlock: 0,
+                agentId: agentId,
+                declaredAmount: amount,
+                declaredBase: declaredBase,
+                note: note
+            })
+        );
+        _openCallPlusOne[msg.sender][token] = callId + 1;
+        emit CallPosted(callId, msg.sender, token, amount, agentId, hasAgent, note);
+    }
+
+
+    // ───────────────────────────── views ─────────────────────────────
+
+    function callCount() external view returns (uint256) {
+        return _calls.length;
+    }
+
+    function getCall(uint256 callId) external view returns (Call memory) {
+        return _existing(callId);
+    }
+
+    function openCallOf(address caller, address token) external view returns (bool open, uint256 callId) {
+        uint256 plusOne = _openCallPlusOne[caller][token];
+        if (plusOne == 0) return (false, 0);
+        return (true, plusOne - 1);
+    }
+
+    function _existing(uint256 callId) internal view returns (Call storage) {
+        if (callId >= _calls.length) revert UnknownCall(callId);
+        return _calls[callId];
+    }
 }
