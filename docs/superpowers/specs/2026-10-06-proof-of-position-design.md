@@ -35,8 +35,9 @@ Around it:
 | D6 | Core + feed section | Approved as written in §6–§7, including the optional keeper and no server broadcast endpoint for browser follows (injected wallets broadcast themselves after a Transaction API `simulate`). | user (section 2) |
 | D7 | Agents section | Approved as written in §8: follower mirrors bStock calls only; analyst runs on an interval loop. | user (section 3) |
 | D8 | Launch section | Approved as written in §9. Before the repo goes public, delete `2026-10-05-sharepay-brief.md` and `telegram-intel-2026-10-06.md` from the pack (another team's brief; other participants' names). Local copies remain in `D:\bnb-tokenized-hackathon\resources\`. | user (section 4) |
-| D9 | Token eligibility | Owner-curated on-chain allowlist seeded with all 675 rows of the pack CSV (87 bStock + 458 Ondo as PLAIN, 130 xStocks as XSTOCK). Unlisted tokens cannot be called. | derived (fake-ticker abuse; approved in section 1) |
+| D9 | Token eligibility | Owner-curated on-chain allowlist seeded with all 675 rows of the pack CSV: 87 bStock + 458 Ondo + the 2 wrapped xStocks (`wPOPMTx`, `wTCENTx`) as PLAIN (547), the 128 rebasing xStocks as XSTOCK. Unlisted tokens cannot be called. | derived (fake-ticker abuse; approved in section 1; wrapped-xStock split per D12) |
 | D10 | Analyst framework depth | Agent Studio scaffold (`bag init`, `@bnbagent/studio-cli@0.0.14`), analyst logic added as new files under `app/agent/src/analyst/` plus one hook line in `unifiedMain.ts`; FREE (price 0) x402 face returns the latest call — no payment is taken, so x402 selling stays out of scope. | derived (Studio special criterion) |
+| D12 | Token-list validation (revision during planning, 2026-10-07) | `setTokens` makes no external calls; tokens are validated off-chain by a read-only batched probe (`deployment.mjs probe-tokens`: `balanceOf` for PLAIN, `sharesOf` for XSTOCK) before listing. Reason: an on-chain probe makes the listing's forge simulation touch all 675 tokens, which outlives the ~1 minute of state public BSC RPCs keep (measured: `missing trie node` after 55 s); without it the simulation finishes in ~12 s. The live probe found `wPOPMTx`/`wTCENTx` have no `sharesOf` (wrapped, non-rebasing) → listed as PLAIN; all 675 then pass. | derived (measured during planning) |
 | D11 | README schema | `R1-web-app v1` (the demo is the UI; contracts listed under its optional `## Contract addresses`); MIT licence; no event overlay (`event.md` mandates no README sections). | derived (`references/readme-schemas.md` tie-breaker) |
 
 ## 3. Verified facts the design rests on (read-only checks, 2026-10-06)
@@ -130,7 +131,7 @@ struct Call {
 | Function | Behavior |
 |---|---|
 | `constructor(address identityRegistry, address reputationRegistry, address initialOwner)` | Stores the two ERC-8004 registries as immutables and the owner. Reverts `ZeroAddress()` on any zero argument. |
-| `setTokens(address[] tokens, BalanceModel[] models)` | Owner only (`NotOwner()`); `LengthMismatch()` if lengths differ. For `PLAIN`, probes `balanceOf(address(this))`; for `XSTOCK`, probes `sharesOf(address(this))`; a reverting probe reverts `BadToken(token)`. `UNLISTED` delists (affects new posts only). Emits `TokenListed(token, model)` per entry. |
+| `setTokens(address[] tokens, BalanceModel[] models)` | Owner only (`NotOwner()`); `LengthMismatch()` if lengths differ; `ZeroAddress()` for a zero token. No external calls (D12): tokens are validated off-chain before listing. `UNLISTED` delists (affects new posts only). Emits `TokenListed(token, model)` per entry. |
 | `transferOwnership(address newOwner)` | Owner only; `ZeroAddress()` guard; emits `OwnershipTransferred`. |
 | `post(address token, uint256 amount, string note) returns (uint256 callId)` | Reverts `TokenNotListed(token)`, `ZeroAmount()`, `NoteTooLong(length)` (> 280 bytes), `CallAlreadyOpen(callId)` (one open call per caller per token). Then `require(IERC20(token).balanceOf(msg.sender) >= amount, "No position, no call.")`. `declaredBase` = `amount` (PLAIN) or `getSharesByUnderlyingAmount(amount)` (XSTOCK; a zero result reverts `ZeroAmount()`). Emits `CallPosted`. |
 | `postAsAgent(address token, uint256 amount, uint256 agentId, string note) returns (uint256 callId)` | As `post`, plus `NotAgentWallet(agentId)` unless `IdentityRegistry.getAgentWallet(agentId) == msg.sender`. |
@@ -174,7 +175,7 @@ State is written before the external call; the call is `try … catch` with a 40
 - **Unit + fuzz + invariant tests** against mocks that mirror the verified ABIs: `MockPlainToken` (ERC-20 balance setter), `MockBStock` (raw balance + `uiMultiplier`), `MockXStock` (shares × multiplier / 1e18 with `sharesOf`, `getSharesByUnderlyingAmount`, `setMultiplier`), `MockIdentityRegistry` (`getAgentWallet`, `isAuthorizedOrOwner`), `MockReputationRegistry` (records calls, enforces the self-feedback rule), `RevertingReputationRegistry`.
 - **No fork tests** (public RPCs serve no historical state). Mainnet behavior is proven in human-gated smoke tasks.
 - **Tooling:** Foundry 1.8.5, solc 0.8.28 (pinned), optimizer 200 runs, `via_ir = true`, forge-std 1.16.0 via soldeer (`dependencies/` git-ignored). Every forge command runs through `node contracts/run-forge.mjs <args>`, which installs soldeer dependencies when missing; gates stay one shell-neutral command.
-- **Scripts:** `DeployCallRegistry.s.sol` (constructor args: the two mainnet ERC-8004 addresses and the broadcaster as owner) and `ListTokens.s.sol` (reads `script/data/tokens.json`, generated from the pack CSV, and calls `setTokens` in batches of 100). Mainnet runs are human-gated (`DEPLOYER_PK` env var, never in files). Deployed address recorded in `deployments/bsc-mainnet.json`.
+- **Scripts:** `DeployCallRegistry.s.sol` (constructor args: the two mainnet ERC-8004 addresses and the broadcaster as owner) and `ListTokens.s.sol` (reads `script/data/tokens.json`, generated from the pack CSV — 547 PLAIN, 128 XSTOCK — and calls `setTokens` in 7 batches of up to 100). `contracts/script/deployment.mjs` records the deployment, checks it on chain, and probes every token read-only before listing (D12). Mainnet runs are human-gated (`DEPLOYER_PK` env var, never in files). Deployed address recorded in `deployments/bsc-mainnet.json`.
 
 ## 6. Subsystem B — core (`packages/core`, `@pop/core`)
 
@@ -365,7 +366,7 @@ Short calls; PnL leaderboards; custody, vaults, escrow or locking of stocks; x40
 | Studio scaffold differs from the 0.0.14 templates | CLI pinned to 0.0.14; the hook edit targets one exact line; a mismatch returns BLOCKED instead of a guess. |
 | Pieverse paid model unavailable | Templated thesis fallback; the cycle still buys and posts. |
 | bStock RFQ closed outside US hours (`40369`) | Follows and analyst buys use SWAP routes only (LiquidMesh / AMM, 24/7). |
-| xStocks `sharesOf` assumption on tokens other than AAPLx | `setTokens` probes `sharesOf` and reverts `BadToken`; the listing task reports any skipped token. |
+| xStocks `sharesOf` assumption on tokens other than AAPLx | Resolved during planning: the live probe (2026-10-07) shows all 128 rebasing xStocks answer `sharesOf`; the 2 wrapped xStocks do not and are listed as PLAIN. The probe re-runs right before listing. |
 | Market `trades` lag | Exit evidence falls back to `Transfer` logs from the logs RPC. |
 | Public RPC rate limits (10K / 5 min) | One `getCalls` per new block per client, 1 s polling, fallback list. |
 
