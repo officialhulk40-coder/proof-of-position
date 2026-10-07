@@ -156,7 +156,6 @@ contract CallRegistry {
         emit CallPosted(callId, msg.sender, token, amount, agentId, hasAgent, note);
     }
 
-
     // ───────────────────────────── views ─────────────────────────────
 
     function callCount() external view returns (uint256) {
@@ -165,6 +164,31 @@ contract CallRegistry {
 
     function getCall(uint256 callId) external view returns (Call memory) {
         return _existing(callId);
+    }
+
+    /// @notice HOLDING / TRIMMED / EXITED from the caller's current balance, ignoring closure.
+    function liveStatus(uint256 callId) external view returns (Status status) {
+        (status,) = _live(_existing(callId));
+    }
+
+    /// @notice CLOSED once closed, otherwise the live status.
+    function statusOf(uint256 callId) external view returns (Status) {
+        return _statusOf(_existing(callId));
+    }
+
+    /// @notice A page of calls with their statuses; clamps to callCount().
+    function getCalls(uint256 start, uint256 count) external view returns (Call[] memory calls, Status[] memory statuses) {
+        uint256 total = _calls.length;
+        if (start >= total) return (new Call[](0), new Status[](0));
+        uint256 n = total - start;
+        if (count < n) n = count;
+        calls = new Call[](n);
+        statuses = new Status[](n);
+        for (uint256 i = 0; i < n; ++i) {
+            Call storage c = _calls[start + i];
+            calls[i] = c;
+            statuses[i] = _statusOf(c);
+        }
     }
 
     function openCallOf(address caller, address token) external view returns (bool open, uint256 callId) {
@@ -176,5 +200,19 @@ contract CallRegistry {
     function _existing(uint256 callId) internal view returns (Call storage) {
         if (callId >= _calls.length) revert UnknownCall(callId);
         return _calls[callId];
+    }
+
+    function _statusOf(Call storage c) internal view returns (Status status) {
+        if (c.closedBlock != 0) return Status.CLOSED;
+        (status,) = _live(c);
+    }
+
+    function _live(Call storage c) internal view returns (Status status, uint256 base) {
+        base = c.model == BalanceModel.XSTOCK
+            ? IXStockShares(c.token).sharesOf(c.caller)
+            : IBalanceToken(c.token).balanceOf(c.caller);
+        if (base >= c.declaredBase) status = Status.HOLDING;
+        else if (base == 0) status = Status.EXITED;
+        else status = Status.TRIMMED;
     }
 }
