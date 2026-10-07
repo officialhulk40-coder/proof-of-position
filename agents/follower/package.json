@@ -1,0 +1,22 @@
+{
+  "name": "@pop/follower",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Follows Proof of Position callers with a Binance Agentic Wallet: buys when they post, sells when their badge flips.",
+  "bin": {
+    "pop-follower": "./bin/pop-follower.mjs"
+  },
+  "scripts": {
+    "cli": "node bin/pop-follower.mjs",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json",
+    "verify": "tsc -p tsconfig.json && vitest run"
+  },
+  "dependencies": {
+    "@pop/core": "workspace:*",
+    "tsx": "^4.23.15",
+    "viem": "^2.57.3",
+    "zod": "^3.25.76"
+  }
+}
