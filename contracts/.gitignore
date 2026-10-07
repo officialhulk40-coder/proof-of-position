@@ -1,0 +1,7 @@
+# Foundry build output and caches
+out/
+cache/
+# soldeer-installed dependencies (restored by run-forge.mjs from soldeer.lock)
+dependencies/
+# forge script broadcast logs stay local; deployments/bsc-mainnet.json is the committed record
+broadcast/
