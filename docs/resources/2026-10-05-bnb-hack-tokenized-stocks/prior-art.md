@@ -27,7 +27,7 @@ descriptions are the lead's wording.
 - **Updates since the pack was built (2026-10-06):**
   - **Taken:** one idea cluster belongs to another team's unpublished project. The Telegram pass had counted this cluster as empty.
   - **Narrower:** basket rebalancing. 4lpha's "TradFi model" (Telegram) claims rebalancing and auto-DCA.
-  - The Telegram crowding table (telegram-intel-2026-10-06.md §3) puts
+  - The Telegram crowding table (telegram-intel-2026-10-06.md (removed before publication) §3) puts
     about 16 entries in the gap / fair-price cluster.
 - **Lead-verified technical traps that rivals' framing often misses** (see the sponsor files):
   - the RWA API `referencePrice` is *derived from* the on-chain price;
@@ -55,7 +55,7 @@ descriptions are the lead's wording.
 | ✓ | [invertilo/bnb-builder-day](https://github.com/invertilo/bnb-builder-day) | 10-03 → 10-03 | (no description; README mentions the DX report) |
 
 More entries turned up in the builder Telegram on 2026-10-06: 15 tokenized-stock projects, 13 of them new,
-most without a public repo. They are listed in telegram-intel-2026-10-06.md
+most without a public repo. They are listed in telegram-intel-2026-10-06.md (removed before publication)
 §1 and not repeated here.
 
 Self-reported rival findings, *not independently verified*:

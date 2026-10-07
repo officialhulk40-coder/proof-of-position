@@ -19,7 +19,7 @@
 | [sponsors/bnb-chain.md](sponsors/bnb-chain.md) | BNB Agent Studio (CLI, deploy targets, 48h testnet trial vs prize text), **ERC-8004 / ERC-8183 (APEX) addresses on BSC**, BSC basics, PancakeSwap addresses |
 | [sponsors/tokenized-stock-issuers.md](sponsors/tokenized-stock-issuers.md) | bStocks / Ondo / xStocks: how to tell them apart, **verified core-ticker addresses**, mechanics (multipliers, compliance, hours), liquidity reality, oracles |
 | [prior-art.md](prior-art.md) | 15 rival entries for this event (14 public repos + one unpublished project), adjacent builds, past BNB winners, shipped products, market-behavior evidence, judge commentary |
-| telegram-intel-2026-10-06.md | Builder Telegram pass (Jul 6 → Oct 6): 15 tokenized-stock projects (13 new), organizer answers, unanswered participant reports (`40304`, `offhours`, AW session, B402 access), crowding by cluster. Its verdict sections evaluate another team's idea, not ours |
+| telegram-intel-2026-10-06.md (removed before publication) | Builder Telegram pass (Jul 6 → Oct 6): 15 tokenized-stock projects (13 new), organizer answers, unanswered participant reports (`40304`, `offhours`, AW session, B402 access), crowding by cluster. Its verdict sections evaluate another team's idea, not ours |
 | Another team's brief (removed before publication) | **Another project's brief, not ours.** Kept as reference only. |
 | [seeds.md](seeds.md) | Dated Q3–Q4 2026 narratives for divergence |
 | [data/bsc-tokenized-stocks-2026-10-05.csv](data/bsc-tokenized-stocks-2026-10-05.csv) | 675-row BSC registry (87 bStock, 458 Ondo, 130 xStocks), with a flag on 95 on-chain-verified rows |
@@ -98,7 +98,7 @@ Fetch date for every row: **2026-10-05**. P = primary (official / first-party), 
 
 ## Gaps (honest unknowns)
 
-1. **Builder Telegram**: read on 2026-10-06, see telegram-intel-2026-10-06.md. The Sep 24 workshop recording mentioned there was not watched. **BNB Chain Discord**: join required, not accessed.
+1. **Builder Telegram**: read on 2026-10-06, see telegram-intel-2026-10-06.md (removed before publication). The Sep 24 workshop recording mentioned there was not watched. **BNB Chain Discord**: join required, not accessed.
 2. **Workshop:** "to be announced" on the event page. Per the Telegram pass, Gwen ran a live "tools + tips" session on Sep 24 and posted the recording on BNB Chain's X. That recording was not watched.
 3. **Developer Portal** (sign-in): API-key flow not verified. **No live Binance Web3 API calls were made** (needs the user's key). The "Binance account or external wallet" ambiguity is C8.
 4. **Agentic Wallet / Agent Studio live behavior:** sign-in required. Commands are from docs and skills, not exercised.
