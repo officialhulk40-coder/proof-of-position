@@ -1,0 +1,20 @@
+{$PUBLIC_HOST} {
+	encode gzip
+
+	# The API server and its keeper (Hono on :8787).
+	handle /api/* {
+		reverse_proxy server:8787
+	}
+
+	# The analyst agent (Agent Studio: A2A, the FREE x402 route, agent card), prefix stripped.
+	handle_path /agent/* {
+		reverse_proxy analyst:9000
+	}
+
+	# The feed: a static Vite build with hash routes.
+	handle {
+		root * /srv/web
+		try_files {path} /index.html
+		file_server
+	}
+}

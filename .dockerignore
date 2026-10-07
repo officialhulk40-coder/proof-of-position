@@ -1,0 +1,15 @@
+**/node_modules
+**/dist
+.git
+**/.studio
+**/.claude
+**/.env
+**/.env.*
+!**/.env.example
+**/*.env
+!**/*.env.example
+devex
+contracts/out
+contracts/cache
+contracts/dependencies
+contracts/broadcast

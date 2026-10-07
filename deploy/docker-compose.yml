@@ -1,0 +1,54 @@
+# Proof of Position on one VPS (Singapore): Caddy (TLS, the static feed, routing), the API server with
+# the recordExit keeper, and the analyst agent. Run from the repository root:
+#   docker compose -f deploy/docker-compose.yml up -d --build
+# Secrets live only on the VPS, never in git or images: deploy/.env, deploy/server.env,
+# deploy/analyst.env (copied from the *.example files) and agents/popanalyst/.studio (the analyst's
+# keystore and .env.local, copied from the machine that ran the analyst setup).
+name: proof-of-position
+
+services:
+  caddy:
+    build:
+      context: ..
+      dockerfile: deploy/caddy.Dockerfile
+      args:
+        VITE_REGISTRY_ADDRESS: ${REGISTRY_ADDRESS:?set REGISTRY_ADDRESS in deploy/.env}
+        VITE_RPC_URLS: ${BSC_RPC_URLS:-}
+    environment:
+      PUBLIC_HOST: ${PUBLIC_HOST:?set PUBLIC_HOST in deploy/.env}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - server
+      - analyst
+    restart: unless-stopped
+
+  server:
+    build:
+      context: ..
+      dockerfile: deploy/server.Dockerfile
+    env_file: server.env
+    volumes:
+      - devex:/app/devex
+    restart: unless-stopped
+
+  analyst:
+    build:
+      context: ..
+      dockerfile: deploy/analyst.Dockerfile
+    env_file:
+      - analyst.env
+      - ../agents/popanalyst/.studio/.env.local
+    volumes:
+      - ../agents/popanalyst/.studio:/app/agents/popanalyst/.studio
+      - devex:/app/devex
+    restart: unless-stopped
+
+volumes:
+  caddy_data:
+  caddy_config:
+  devex:
