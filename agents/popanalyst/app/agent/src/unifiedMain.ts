@@ -103,6 +103,8 @@ import {
 } from "./requestLimits.js";
 import type { RunWork } from "./sellerCore.js";
 import { LLM_READ_TOOLS } from "./tools.js";
+import { withLatestCallFace } from "./analyst/face.js";
+import { startAnalystLoop } from "./analyst/loop.js";
 
 const APP_NAME = "agent";
 
@@ -470,7 +472,8 @@ async function main(): Promise<void> {
     ]),
   ];
   const port = ports[0] as number;
-  const runWork = buildRunWork();
+  const runWork = withLatestCallFace(buildRunWork());
+  startAnalystLoop();
 
   // The executor backs the seller skills with signing.ts fixed code (NEVER an
   // LLM tool). The SAME executor serves every carrier: @a2a-js JSON-RPC,
