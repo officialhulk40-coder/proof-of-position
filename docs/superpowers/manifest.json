@@ -4,7 +4,9 @@
   "subsystems": [
     "contracts",
     "core",
-    "feed"
+    "feed",
+    "agents",
+    "launch"
   ],
   "tasks": [
     {
@@ -970,6 +972,55 @@
       "status": "pending"
     },
     {
+      "id": "core:12",
+      "subsystem": "core",
+      "title": "Trading API swap helper (quote, approve, swap through the pipeline)",
+      "plan": "docs/superpowers/plans/2026-10-07-core.md",
+      "depends_on": [
+        "core:6",
+        "core:7",
+        "core:9",
+        "core:10",
+        "core:11"
+      ],
+      "effort": "high",
+      "model_tier": "top",
+      "files": {
+        "create": [
+          "packages/core/src/tx/swap.ts"
+        ],
+        "modify": [
+          "packages/core/src/index.ts"
+        ],
+        "test": [
+          "packages/core/src/tx/swap.test.ts"
+        ]
+      },
+      "provides": [
+        "swapWithTradingApi(params: { w3w: W3wClient; client: SwapClient; signer: TxSigner; fromToken: Address; toToken: Address; amount: bigint; mev: boolean; slippagePercent?: string; receiptTimeoutMs?: number }): Promise<{ route: QuoteRoute; approval: SendTxResult | null; swap: SendTxResult; received: bigint }>",
+        "class NoSwapRouteError extends Error",
+        "type SwapClient = PipelineClient & Pick<PublicClient, \"readContract\">"
+      ],
+      "requires": [
+        "getQuote(client: W3wClient, params: { fromToken: string; toToken: string; amount: bigint; userWalletAddress: string }): Promise<QuoteRoute[]>",
+        "pickSwapRoute(routes: readonly QuoteRoute[]): QuoteRoute | null",
+        "buildSwap(client: W3wClient, params: { fromToken; toToken; amount: bigint; userWalletAddress; quoteId: string; slippagePercent?: string; autoSlippage?: boolean }): Promise<{ routerResult; tx: { from; to; data; value; gas?; gasPrice?; minReceiveAmount? }; executionMode; rfq? }>",
+        "getApproveTransaction(client: W3wClient, params: { token: string; amount: bigint; vendor?: string }): Promise<{ data: string; dexContractAddress: string; gasLimit?: string | null; gasPrice?: string | null }>",
+        "getTokenInfo(address: string): TokenInfo | undefined",
+        "ERC20_ABI; REPUTATION_REGISTRY_ABI (getSummary, readFeedback, getLastIndex); IDENTITY_REGISTRY_ABI (getAgentWallet, ownerOf, tokenURI, register, Registered)",
+        "sendWithTransactionApi(params: { w3w: W3wClient; client: PipelineClient; signer: TxSigner; tx: { to: Address; data: Hex; value?: bigint; gas?: bigint; gasPrice?: bigint }; mev: boolean; gasBufferPercent?: number; receiptTimeoutMs?: number; clock?: () => number }): Promise<{ txHash: Hex; orderId: string; receipt: TransactionReceipt; simulation: Simulation; timings: { simulateMs: number; broadcastMs: number; confirmMs: number } }>",
+        "interface TxSigner { address: Address; signTransaction(tx: LegacyTxRequest): Promise<Hex> }"
+      ],
+      "gate": {
+        "run": "pnpm --filter @pop/core run verify",
+        "expect": "PASS — `tsc` prints no errors, then `Test Files  12 passed (12)` and `Tests  63 passed (63)`"
+      },
+      "commit": "feat(core): Trading API swap helper with approval and re-quote",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
       "id": "feed:1",
       "subsystem": "feed",
       "title": "Server package and environment config",
@@ -978,7 +1029,7 @@
         "core:11"
       ],
       "effort": "low",
-      "model_tier": "standard",
+      "model_tier": "top",
       "files": {
         "create": [
           "apps/server/package.json",
@@ -1260,7 +1311,7 @@
         "core:11"
       ],
       "effort": "medium",
-      "model_tier": "standard",
+      "model_tier": "top",
       "files": {
         "create": [
           "apps/server/src/main.ts"
@@ -1687,6 +1738,920 @@
         "expect": "PASS — `tsc` prints no errors, then `Test Files  9 passed (9)` and `Tests  45 passed (45)`, then vite prints `✓ built in …`"
       },
       "commit": "feat(web): feed, call, post and how pages with toasts, disclaimers and styles",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "agents:1",
+      "subsystem": "agents",
+      "title": "Follower package and the `baw` CLI runner",
+      "plan": "docs/superpowers/plans/2026-10-07-agents.md",
+      "depends_on": [
+        "core:11"
+      ],
+      "effort": "high",
+      "model_tier": "top",
+      "files": {
+        "create": [
+          "agents/follower/package.json",
+          "agents/follower/tsconfig.json",
+          "agents/follower/src/baw.ts",
+          "agents/follower/src/testing.ts"
+        ],
+        "modify": [],
+        "test": [
+          "agents/follower/src/baw.test.ts"
+        ]
+      },
+      "provides": [
+        "@pop/follower package (agents/follower; bin pop-follower -> bin/pop-follower.mjs; dependencies @pop/core workspace:*, tsx ^4.23.15, viem ^2.57.3, zod ^3.25.76; scripts cli, test, typecheck, verify)",
+        "type BawRunner = (args: readonly string[]) => Promise<{ code: number; stdout: string; stderr: string }>; createBawRunner(options?: { bin?: string; timeoutMs?: number }): BawRunner; class BawError; REQUIRED_BAW_VERSION = \"1.10.0\"",
+        "bawJson<T>(runner, args, schema): Promise<T>; cliCheck(runner, requiredVersion?); walletStatus(runner): Promise<string>; bscAddress(runner): Promise<Address>; walletSettings(runner): Promise<WalletSettings>; txLock(runner): Promise<string>; marketSwap(runner, { fromTokenQty, fromToken, toToken, slippage?, mev? }): Promise<string>; getMarketOrder(runner, orderId): Promise<MarketOrder | null>",
+        "follower test helpers (agents/follower/src/testing.ts): REGISTRY, CALLER, OTHER_CALLER, WALLET, NVDAB, call(id, overrides?, status?), scriptedBaw(handlers), manualClock(start?)"
+      ],
+      "requires": [
+        "import { … } from \"@pop/core\" (Node entry: every core module)"
+      ],
+      "gate": {
+        "run": "pnpm --filter @pop/follower exec vitest run src/baw.test.ts",
+        "expect": "PASS — `Test Files  1 passed (1)` and `Tests  6 passed (6)`"
+      },
+      "commit": "feat(follower): @pop/follower package and a typed, injection-safe baw runner",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "agents:2",
+      "subsystem": "agents",
+      "title": "The follower's decision step and state file",
+      "plan": "docs/superpowers/plans/2026-10-07-agents.md",
+      "depends_on": [
+        "agents:1",
+        "core:11"
+      ],
+      "effort": "medium",
+      "model_tier": "standard",
+      "files": {
+        "create": [
+          "agents/follower/src/decide.ts",
+          "agents/follower/src/state.ts"
+        ],
+        "modify": [],
+        "test": [
+          "agents/follower/src/decide.test.ts"
+        ]
+      },
+      "provides": [
+        "decide(calls: readonly CallView[], state: FollowerState, config: FollowerConfig): Action[]; exitReason(call): string | null; types FollowerConfig { callers, budgetUsdt, maxOpen }, FollowerState { version: 1, cursor, mirrors }, Mirror, Action",
+        "loadState(path): FollowerState | null; saveState(path, state): void (atomic); defaultStatePath(env?): string (POP_FOLLOWER_STATE or ~/.pop-follower/state.json)"
+      ],
+      "requires": [
+        "follower test helpers (agents/follower/src/testing.ts): REGISTRY, CALLER, OTHER_CALLER, WALLET, NVDAB, call(id, overrides?, status?), scriptedBaw(handlers), manualClock(start?)",
+        "import { … } from \"@pop/core\" (Node entry: every core module)"
+      ],
+      "gate": {
+        "run": "pnpm --filter @pop/follower exec vitest run src/decide.test.ts",
+        "expect": "PASS — `Test Files  1 passed (1)` and `Tests  7 passed (7)`"
+      },
+      "commit": "feat(follower): pure buy/sell decision step and an atomic state file",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "agents:3",
+      "subsystem": "agents",
+      "title": "Order execution through the Agentic Wallet",
+      "plan": "docs/superpowers/plans/2026-10-07-agents.md",
+      "depends_on": [
+        "agents:1",
+        "core:11"
+      ],
+      "effort": "high",
+      "model_tier": "top",
+      "files": {
+        "create": [
+          "agents/follower/src/executor.ts"
+        ],
+        "modify": [],
+        "test": [
+          "agents/follower/src/executor.test.ts"
+        ]
+      },
+      "provides": [
+        "executeBuy(deps: ExecutorDeps, { token, budgetUsdt }): Promise<OrderOutcome & { quantity: bigint }>; executeSell(deps, { token, quantity }): Promise<OrderOutcome>; requireConnected(baw): Promise<void>; WalletSignedOutError; OrderFailedError; ExecutorDeps { baw, balanceOf, wallet, now, sleep, log, pollMs?, timeoutMs? }"
+      ],
+      "requires": [
+        "bawJson<T>(runner, args, schema): Promise<T>; cliCheck(runner, requiredVersion?); walletStatus(runner): Promise<string>; bscAddress(runner): Promise<Address>; walletSettings(runner): Promise<WalletSettings>; txLock(runner): Promise<string>; marketSwap(runner, { fromTokenQty, fromToken, toToken, slippage?, mev? }): Promise<string>; getMarketOrder(runner, orderId): Promise<MarketOrder | null>",
+        "follower test helpers (agents/follower/src/testing.ts): REGISTRY, CALLER, OTHER_CALLER, WALLET, NVDAB, call(id, overrides?, status?), scriptedBaw(handlers), manualClock(start?)",
+        "import { … } from \"@pop/core\" (Node entry: every core module)"
+      ],
+      "gate": {
+        "run": "pnpm --filter @pop/follower exec vitest run src/executor.test.ts",
+        "expect": "PASS — `Test Files  1 passed (1)` and `Tests  6 passed (6)`"
+      },
+      "commit": "feat(follower): market orders polled to FINISHED with lock waits and one retry",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "agents:4",
+      "subsystem": "agents",
+      "title": "The follower loop",
+      "plan": "docs/superpowers/plans/2026-10-07-agents.md",
+      "depends_on": [
+        "agents:1",
+        "agents:2",
+        "agents:3",
+        "core:11"
+      ],
+      "effort": "high",
+      "model_tier": "top",
+      "files": {
+        "create": [
+          "agents/follower/src/follower.ts"
+        ],
+        "modify": [],
+        "test": [
+          "agents/follower/src/follower.test.ts"
+        ]
+      },
+      "provides": [
+        "createFollower(deps: FollowerDeps, options?: { includeExisting?: boolean }): Promise<Follower { state; tick(): Promise<Action[]> }>"
+      ],
+      "requires": [
+        "decide(calls: readonly CallView[], state: FollowerState, config: FollowerConfig): Action[]; exitReason(call): string | null; types FollowerConfig { callers, budgetUsdt, maxOpen }, FollowerState { version: 1, cursor, mirrors }, Mirror, Action",
+        "loadState(path): FollowerState | null; saveState(path, state): void (atomic); defaultStatePath(env?): string (POP_FOLLOWER_STATE or ~/.pop-follower/state.json)",
+        "executeBuy(deps: ExecutorDeps, { token, budgetUsdt }): Promise<OrderOutcome & { quantity: bigint }>; executeSell(deps, { token, quantity }): Promise<OrderOutcome>; requireConnected(baw): Promise<void>; WalletSignedOutError; OrderFailedError; ExecutorDeps { baw, balanceOf, wallet, now, sleep, log, pollMs?, timeoutMs? }",
+        "follower test helpers (agents/follower/src/testing.ts): REGISTRY, CALLER, OTHER_CALLER, WALLET, NVDAB, call(id, overrides?, status?), scriptedBaw(handlers), manualClock(start?)",
+        "import { … } from \"@pop/core\" (Node entry: every core module)"
+      ],
+      "gate": {
+        "run": "pnpm --filter @pop/follower exec vitest run src/follower.test.ts",
+        "expect": "PASS — `Test Files  1 passed (1)` and `Tests  3 passed (3)`"
+      },
+      "commit": "feat(follower): tick loop that mirrors new calls and exits with the caller",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "agents:5",
+      "subsystem": "agents",
+      "title": "The `pop-follower` CLI",
+      "plan": "docs/superpowers/plans/2026-10-07-agents.md",
+      "depends_on": [
+        "agents:1",
+        "agents:2",
+        "agents:3",
+        "agents:4",
+        "core:11"
+      ],
+      "effort": "medium",
+      "model_tier": "top",
+      "files": {
+        "create": [
+          "agents/follower/src/cli.ts",
+          "agents/follower/bin/pop-follower.mjs"
+        ],
+        "modify": [],
+        "test": [
+          "agents/follower/src/cli.test.ts"
+        ]
+      },
+      "provides": [
+        "pop-follower CLI: main(argv, overrides?): Promise<number> with check | run --caller … --budget-usdt … [--max-open] [--include-existing] [--once] | status | smoke --token … --usdt … [--yes]; USAGE",
+        "pnpm --filter @pop/follower run cli <command> (and bin/pop-follower.mjs via tsx/esm/api)"
+      ],
+      "requires": [
+        "type BawRunner = (args: readonly string[]) => Promise<{ code: number; stdout: string; stderr: string }>; createBawRunner(options?: { bin?: string; timeoutMs?: number }): BawRunner; class BawError; REQUIRED_BAW_VERSION = \"1.10.0\"",
+        "bawJson<T>(runner, args, schema): Promise<T>; cliCheck(runner, requiredVersion?); walletStatus(runner): Promise<string>; bscAddress(runner): Promise<Address>; walletSettings(runner): Promise<WalletSettings>; txLock(runner): Promise<string>; marketSwap(runner, { fromTokenQty, fromToken, toToken, slippage?, mev? }): Promise<string>; getMarketOrder(runner, orderId): Promise<MarketOrder | null>",
+        "loadState(path): FollowerState | null; saveState(path, state): void (atomic); defaultStatePath(env?): string (POP_FOLLOWER_STATE or ~/.pop-follower/state.json)",
+        "executeBuy(deps: ExecutorDeps, { token, budgetUsdt }): Promise<OrderOutcome & { quantity: bigint }>; executeSell(deps, { token, quantity }): Promise<OrderOutcome>; requireConnected(baw): Promise<void>; WalletSignedOutError; OrderFailedError; ExecutorDeps { baw, balanceOf, wallet, now, sleep, log, pollMs?, timeoutMs? }",
+        "createFollower(deps: FollowerDeps, options?: { includeExisting?: boolean }): Promise<Follower { state; tick(): Promise<Action[]> }>",
+        "follower test helpers (agents/follower/src/testing.ts): REGISTRY, CALLER, OTHER_CALLER, WALLET, NVDAB, call(id, overrides?, status?), scriptedBaw(handlers), manualClock(start?)",
+        "import { … } from \"@pop/core\" (Node entry: every core module)"
+      ],
+      "gate": {
+        "run": "pnpm --filter @pop/follower run verify",
+        "expect": "PASS — `tsc` prints no errors, then `Test Files  5 passed (5)` and `Tests  31 passed (31)`"
+      },
+      "commit": "feat(follower): pop-follower check, run, status and smoke",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "agents:6",
+      "subsystem": "agents",
+      "title": "The `pop-follower` Wallet Skill",
+      "plan": "docs/superpowers/plans/2026-10-07-agents.md",
+      "depends_on": [
+        "agents:5"
+      ],
+      "effort": "low",
+      "model_tier": "standard",
+      "files": {
+        "create": [
+          "skills/pop-follower/SKILL.md",
+          "skills/pop-follower/references/commands.md",
+          "skills/pop-follower/references/policy.md",
+          "skills/pop-follower/references/troubleshooting.md"
+        ],
+        "modify": [],
+        "test": [
+          "agents/follower/src/skill.test.ts"
+        ]
+      },
+      "provides": [
+        "Wallet Skill skills/pop-follower (SKILL.md frontmatter name pop-follower, bins baw + pop-follower; references/commands.md, policy.md, troubleshooting.md)"
+      ],
+      "requires": [
+        "pop-follower CLI: main(argv, overrides?): Promise<number> with check | run --caller … --budget-usdt … [--max-open] [--include-existing] [--once] | status | smoke --token … --usdt … [--yes]; USAGE"
+      ],
+      "gate": {
+        "run": "pnpm --filter @pop/follower run verify",
+        "expect": "PASS — `tsc` prints no errors, then `Test Files  6 passed (6)` and `Tests  34 passed (34)`"
+      },
+      "commit": "docs(skills): pop-follower Wallet Skill with commands, policy and troubleshooting",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "agents:7",
+      "subsystem": "agents",
+      "title": "Analyst scaffold (Agent Studio) and its config",
+      "plan": "docs/superpowers/plans/2026-10-07-agents.md",
+      "depends_on": [
+        "core:11"
+      ],
+      "effort": "medium",
+      "model_tier": "standard",
+      "files": {
+        "create": [
+          "agents/scaffold-analyst.mjs",
+          "agents/popanalyst/.gitignore",
+          "agents/popanalyst/AGENTS.md",
+          "agents/popanalyst/README.md",
+          "agents/popanalyst/package.json",
+          "agents/popanalyst/pnpm-workspace.yaml",
+          "agents/popanalyst/agentcore/agentcore.json",
+          "agents/popanalyst/agentcore/aws-targets.json",
+          "agents/popanalyst/app/agent/.gitignore",
+          "agents/popanalyst/app/agent/README.md",
+          "agents/popanalyst/app/agent/package.json",
+          "agents/popanalyst/app/agent/pnpm-workspace.yaml",
+          "agents/popanalyst/app/agent/studio.toml",
+          "agents/popanalyst/app/agent/tsconfig.json",
+          "agents/popanalyst/app/agent/tsconfig.analyst.json",
+          "agents/popanalyst/app/agent/vendor/.gitkeep",
+          "agents/popanalyst/app/agent/src/agentCard.ts",
+          "agents/popanalyst/app/agent/src/deliveryPolicy.ts",
+          "agents/popanalyst/app/agent/src/executor.ts",
+          "agents/popanalyst/app/agent/src/model.ts",
+          "agents/popanalyst/app/agent/src/readToolCatalog.ts",
+          "agents/popanalyst/app/agent/src/requestLimits.ts",
+          "agents/popanalyst/app/agent/src/sellerCore.ts",
+          "agents/popanalyst/app/agent/src/signing.ts",
+          "agents/popanalyst/app/agent/src/tools.ts",
+          "agents/popanalyst/app/agent/src/unifiedMain.ts",
+          "agents/popanalyst/app/agent/src/x402Buyer.ts",
+          "agents/popanalyst/app/agent/src/analyst/config.ts"
+        ],
+        "modify": [],
+        "test": [
+          "agents/popanalyst/app/agent/src/analyst/config.test.ts"
+        ]
+      },
+      "provides": [
+        "Agent Studio 0.0.14 workspace agents/popanalyst (bag init popanalyst … --no-onboard --no-install --ide claude-code; app/agent package popanalyst-agent with @pop/core link:../../../../packages/core, viem, vitest; scripts start, test, typecheck:analyst, verify:analyst; tsconfig.analyst.json)",
+        "buyWithX402(url: string, maxUsd: number, method?: string): Promise<Record<string, unknown>> (src/x402Buyer.ts, the x402-buyer recipe)",
+        "loadAnalystConfig(env): AnalystConfig { enabled, registry, agentId, watchlist, buyUsdt, holdHours, intervalMinutes, rpcUrls, w3w, feedUrl, telemetryFile }; loopBlocker(config): string | null; MAX_BUY_USDT = 5"
+      ],
+      "requires": [
+        "import { … } from \"@pop/core\" (Node entry: every core module)"
+      ],
+      "gate": {
+        "run": "pnpm --dir agents/popanalyst/app/agent exec vitest run src/analyst/config.test.ts",
+        "expect": "PASS — `Test Files  1 passed (1)` and `Tests  4 passed (4)`"
+      },
+      "commit": "feat(analyst): Agent Studio 0.0.14 scaffold, x402 buyer recipe and analyst config",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "agents:8",
+      "subsystem": "agents",
+      "title": "Analyst research and thesis",
+      "plan": "docs/superpowers/plans/2026-10-07-agents.md",
+      "depends_on": [
+        "agents:7",
+        "core:11"
+      ],
+      "effort": "medium",
+      "model_tier": "standard",
+      "files": {
+        "create": [
+          "agents/popanalyst/app/agent/src/analyst/research.ts",
+          "agents/popanalyst/app/agent/src/analyst/thesis.ts"
+        ],
+        "modify": [],
+        "test": [
+          "agents/popanalyst/app/agent/src/analyst/research.test.ts"
+        ]
+      },
+      "provides": [
+        "researchToken(deps: { w3w; buyWithX402 }, token: TokenInfo): Promise<Research>; pickNumbers(json, keys); CMC_PAIR_QUOTES_URL; CMC_MAX_USD = 0.02; type Research",
+        "writeThesis(generate: GenerateText | null, research, holdHours): Promise<{ text; source: \"llm\" | \"template\" }>; templateThesis; clampNote(text): string (≤ 280 bytes); MAX_NOTE_BYTES = 280"
+      ],
+      "requires": [
+        "Agent Studio 0.0.14 workspace agents/popanalyst (bag init popanalyst … --no-onboard --no-install --ide claude-code; app/agent package popanalyst-agent with @pop/core link:../../../../packages/core, viem, vitest; scripts start, test, typecheck:analyst, verify:analyst; tsconfig.analyst.json)",
+        "import { … } from \"@pop/core\" (Node entry: every core module)"
+      ],
+      "gate": {
+        "run": "pnpm --dir agents/popanalyst/app/agent exec vitest run src/analyst/research.test.ts",
+        "expect": "PASS — `Test Files  1 passed (1)` and `Tests  5 passed (5)`"
+      },
+      "commit": "feat(analyst): RWA + Market API + CMC x402 research and a 280-byte thesis",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "agents:9",
+      "subsystem": "agents",
+      "title": "Analyst registry writes and the fake chain world",
+      "plan": "docs/superpowers/plans/2026-10-07-agents.md",
+      "depends_on": [
+        "agents:7",
+        "core:11",
+        "core:12"
+      ],
+      "effort": "high",
+      "model_tier": "top",
+      "files": {
+        "create": [
+          "agents/popanalyst/app/agent/src/analyst/registry.ts",
+          "agents/popanalyst/app/agent/src/analyst/testing.ts"
+        ],
+        "modify": [],
+        "test": [
+          "agents/popanalyst/app/agent/src/analyst/registry.test.ts"
+        ]
+      },
+      "provides": [
+        "postAsAgent(deps: RegistryWriteDeps, { token, amount, agentId, note }): Promise<{ callId: number; txHash }>; closeCall(deps, callId): Promise<{ txHash; heldThrough: boolean | null }>",
+        "analyst test helpers (src/analyst/testing.ts): REGISTRY, AGENT_WALLET, ROUTER, USDT, NVDAB, rawCall, testConfig, fakeWorld(options) — a fake BSC + Web3 API that records what was signed"
+      ],
+      "requires": [
+        "loadAnalystConfig(env): AnalystConfig { enabled, registry, agentId, watchlist, buyUsdt, holdHours, intervalMinutes, rpcUrls, w3w, feedUrl, telemetryFile }; loopBlocker(config): string | null; MAX_BUY_USDT = 5",
+        "type SwapClient = PipelineClient & Pick<PublicClient, \"readContract\">",
+        "import { … } from \"@pop/core\" (Node entry: every core module)"
+      ],
+      "gate": {
+        "run": "pnpm --dir agents/popanalyst/app/agent exec vitest run src/analyst/registry.test.ts",
+        "expect": "PASS — `Test Files  1 passed (1)` and `Tests  3 passed (3)`"
+      },
+      "commit": "feat(analyst): postAsAgent and close through the simulate-first pipeline",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "agents:10",
+      "subsystem": "agents",
+      "title": "One analyst cycle",
+      "plan": "docs/superpowers/plans/2026-10-07-agents.md",
+      "depends_on": [
+        "agents:7",
+        "agents:8",
+        "agents:9",
+        "core:11",
+        "core:12"
+      ],
+      "effort": "high",
+      "model_tier": "top",
+      "files": {
+        "create": [
+          "agents/popanalyst/app/agent/src/analyst/cycle.ts"
+        ],
+        "modify": [],
+        "test": [
+          "agents/popanalyst/app/agent/src/analyst/cycle.test.ts"
+        ]
+      },
+      "provides": [
+        "runCycle(deps: CycleDeps): Promise<{ closed: number[]; posted: { callId; symbol; txHash } | null; skipped: string[] }>"
+      ],
+      "requires": [
+        "loadAnalystConfig(env): AnalystConfig { enabled, registry, agentId, watchlist, buyUsdt, holdHours, intervalMinutes, rpcUrls, w3w, feedUrl, telemetryFile }; loopBlocker(config): string | null; MAX_BUY_USDT = 5",
+        "researchToken(deps: { w3w; buyWithX402 }, token: TokenInfo): Promise<Research>; pickNumbers(json, keys); CMC_PAIR_QUOTES_URL; CMC_MAX_USD = 0.02; type Research",
+        "postAsAgent(deps: RegistryWriteDeps, { token, amount, agentId, note }): Promise<{ callId: number; txHash }>; closeCall(deps, callId): Promise<{ txHash; heldThrough: boolean | null }>",
+        "analyst test helpers (src/analyst/testing.ts): REGISTRY, AGENT_WALLET, ROUTER, USDT, NVDAB, rawCall, testConfig, fakeWorld(options) — a fake BSC + Web3 API that records what was signed",
+        "swapWithTradingApi(params: { w3w: W3wClient; client: SwapClient; signer: TxSigner; fromToken: Address; toToken: Address; amount: bigint; mev: boolean; slippagePercent?: string; receiptTimeoutMs?: number }): Promise<{ route: QuoteRoute; approval: SendTxResult | null; swap: SendTxResult; received: bigint }>",
+        "class NoSwapRouteError extends Error",
+        "import { … } from \"@pop/core\" (Node entry: every core module)"
+      ],
+      "gate": {
+        "run": "pnpm --dir agents/popanalyst/app/agent exec vitest run src/analyst/cycle.test.ts",
+        "expect": "PASS — `Test Files  1 passed (1)` and `Tests  3 passed (3)`"
+      },
+      "commit": "feat(analyst): close-then-sell, then research, buy and post one call per cycle",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "agents:11",
+      "subsystem": "agents",
+      "title": "Latest-call face, the loop, the scaffold hook and the setup check",
+      "plan": "docs/superpowers/plans/2026-10-07-agents.md",
+      "depends_on": [
+        "agents:7",
+        "agents:8",
+        "agents:9",
+        "agents:10",
+        "core:11"
+      ],
+      "effort": "high",
+      "model_tier": "top",
+      "files": {
+        "create": [
+          "agents/popanalyst/app/agent/src/analyst/face.ts",
+          "agents/popanalyst/app/agent/src/analyst/loop.ts",
+          "agents/popanalyst/app/agent/scripts/apply-analyst-hook.mjs",
+          "agents/popanalyst/app/agent/scripts/check-studio-setup.mjs"
+        ],
+        "modify": [
+          "agents/popanalyst/app/agent/src/unifiedMain.ts"
+        ],
+        "test": [
+          "agents/popanalyst/app/agent/src/analyst/face.test.ts",
+          "agents/popanalyst/app/agent/src/analyst/setup.test.ts"
+        ]
+      },
+      "provides": [
+        "withLatestCallFace(inner: RunWork, summarize?): RunWork; latestCall(deps): Promise<LatestCall | null>",
+        "startAnalystLoop(env?, log?): LoopHandle | null; scheduleCycles(run, { intervalMs, firstDelayMs, log, timers? }); studioSigner(): TxSigner",
+        "unifiedMain.ts hook (scripts/apply-analyst-hook.mjs): const runWork = withLatestCallFace(buildRunWork()); startAnalystLoop();",
+        "node agents/popanalyst/app/agent/scripts/check-studio-setup.mjs → PASS when wallet, Pieverse key, paid model, CMC trust and a ≤ $1/day budget are set"
+      ],
+      "requires": [
+        "loadAnalystConfig(env): AnalystConfig { enabled, registry, agentId, watchlist, buyUsdt, holdHours, intervalMinutes, rpcUrls, w3w, feedUrl, telemetryFile }; loopBlocker(config): string | null; MAX_BUY_USDT = 5",
+        "buyWithX402(url: string, maxUsd: number, method?: string): Promise<Record<string, unknown>> (src/x402Buyer.ts, the x402-buyer recipe)",
+        "researchToken(deps: { w3w; buyWithX402 }, token: TokenInfo): Promise<Research>; pickNumbers(json, keys); CMC_PAIR_QUOTES_URL; CMC_MAX_USD = 0.02; type Research",
+        "writeThesis(generate: GenerateText | null, research, holdHours): Promise<{ text; source: \"llm\" | \"template\" }>; templateThesis; clampNote(text): string (≤ 280 bytes); MAX_NOTE_BYTES = 280",
+        "runCycle(deps: CycleDeps): Promise<{ closed: number[]; posted: { callId; symbol; txHash } | null; skipped: string[] }>",
+        "analyst test helpers (src/analyst/testing.ts): REGISTRY, AGENT_WALLET, ROUTER, USDT, NVDAB, rawCall, testConfig, fakeWorld(options) — a fake BSC + Web3 API that records what was signed",
+        "import { … } from \"@pop/core\" (Node entry: every core module)"
+      ],
+      "gate": {
+        "run": "pnpm --dir agents/popanalyst/app/agent run verify:analyst",
+        "expect": "PASS — `tsc` prints no errors, then `Test Files  6 passed (6)` and `Tests  23 passed (23)`"
+      },
+      "commit": "feat(analyst): latest-call face, cycle loop, unifiedMain hook and setup check",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "agents:12",
+      "subsystem": "agents",
+      "title": "Analyst wallet, Pieverse model, CMC trust and budget (HUMAN-GATED)",
+      "plan": "docs/superpowers/plans/2026-10-07-agents.md",
+      "depends_on": [
+        "agents:11"
+      ],
+      "effort": "medium",
+      "model_tier": "top",
+      "files": {
+        "create": [],
+        "modify": [
+          "agents/popanalyst/app/agent/studio.toml"
+        ],
+        "test": []
+      },
+      "provides": [
+        "analyst wallet funded and configured (agents/popanalyst/app/agent/studio.toml [wallet].address, Pieverse key, paid model, CMC trust, budget ≤ $1/day)"
+      ],
+      "requires": [
+        "node agents/popanalyst/app/agent/scripts/check-studio-setup.mjs → PASS when wallet, Pieverse key, paid model, CMC trust and a ≤ $1/day budget are set"
+      ],
+      "gate": {
+        "run": "node agents/popanalyst/app/agent/scripts/check-studio-setup.mjs",
+        "expect": "PASS — six `PASS …` lines, then `PASS`"
+      },
+      "commit": "chore(analyst): agent wallet, Pieverse paid model, CMC x402 trust and a $1/day budget",
+      "human_gate": true,
+      "gate_profile": "wallet",
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "launch:1",
+      "subsystem": "launch",
+      "title": "DevEx log and the @pop/demo package",
+      "plan": "docs/superpowers/plans/2026-10-07-launch.md",
+      "depends_on": [
+        "core:11"
+      ],
+      "effort": "low",
+      "model_tier": "standard",
+      "files": {
+        "create": [
+          "DEVEX_LOG.md",
+          "scripts/demo/package.json",
+          "scripts/demo/tsconfig.json",
+          "scripts/demo/src/devex.ts"
+        ],
+        "modify": [],
+        "test": [
+          "scripts/demo/src/devex.test.ts"
+        ]
+      },
+      "provides": [
+        "DEVEX_LOG.md (raw notes for the human-written DevEx report: the DX form's sections, then Smoke evidence with S1–S5 and Rehearsal, each starting with a (pending) bullet)",
+        "@pop/demo package (scripts/demo; dependencies @pop/core workspace:*, viem ^2.57.3, zod ^3.25.76; scripts demo (tsx src/main.ts), test, typecheck, verify)",
+        "devexProblems(text, sections): string[]; sectionBullets(text, heading); DEVEX_SECTIONS; SMOKE_SECTIONS"
+      ],
+      "requires": [
+        "import { … } from \"@pop/core\" (Node entry: every core module)"
+      ],
+      "gate": {
+        "run": "pnpm --filter @pop/demo exec vitest run src/devex.test.ts",
+        "expect": "PASS — `Test Files  1 passed (1)` and `Tests  4 passed (4)`"
+      },
+      "commit": "docs: DEVEX_LOG.md skeleton and the @pop/demo package",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "launch:2",
+      "subsystem": "launch",
+      "title": "The caller persona",
+      "plan": "docs/superpowers/plans/2026-10-07-launch.md",
+      "depends_on": [
+        "launch:1",
+        "core:11",
+        "core:12"
+      ],
+      "effort": "high",
+      "model_tier": "top",
+      "files": {
+        "create": [
+          "scripts/demo/src/env.ts",
+          "scripts/demo/src/caller.ts",
+          "scripts/demo/src/testing.ts"
+        ],
+        "modify": [],
+        "test": [
+          "scripts/demo/src/caller.test.ts"
+        ]
+      },
+      "provides": [
+        "loadDemoEnv(env): DemoEnv { registry, rpcUrls, w3w, callerKey, telemetryFile, feedUrl, analystAgentId, analystWallet }",
+        "callerBuy(deps, token, usdt); callerPost(deps, token, amount, note): Promise<{ callId; txHash }>; callerSell(deps, token) (whole balance); callerTryGate(deps, token, amount, broadcast): Promise<{ wouldSucceed; failReason; txHash }>; TRY_GATE_GAS = 200000n",
+        "demo test helpers (scripts/demo/src/testing.ts): REGISTRY, CALLER, ROUTER, NVDAB, rawCall, demoWorld(options)"
+      ],
+      "requires": [
+        "@pop/demo package (scripts/demo; dependencies @pop/core workspace:*, viem ^2.57.3, zod ^3.25.76; scripts demo (tsx src/main.ts), test, typecheck, verify)",
+        "swapWithTradingApi(params: { w3w: W3wClient; client: SwapClient; signer: TxSigner; fromToken: Address; toToken: Address; amount: bigint; mev: boolean; slippagePercent?: string; receiptTimeoutMs?: number }): Promise<{ route: QuoteRoute; approval: SendTxResult | null; swap: SendTxResult; received: bigint }>",
+        "type SwapClient = PipelineClient & Pick<PublicClient, \"readContract\">",
+        "import { … } from \"@pop/core\" (Node entry: every core module)"
+      ],
+      "gate": {
+        "run": "pnpm --filter @pop/demo exec vitest run src/caller.test.ts",
+        "expect": "PASS — `Test Files  1 passed (1)` and `Tests  7 passed (7)`"
+      },
+      "commit": "feat(demo): caller persona — buy, post, sell and try the gate",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "launch:3",
+      "subsystem": "launch",
+      "title": "Checks and the `pop-demo` CLI",
+      "plan": "docs/superpowers/plans/2026-10-07-launch.md",
+      "depends_on": [
+        "launch:1",
+        "launch:2",
+        "core:11"
+      ],
+      "effort": "medium",
+      "model_tier": "top",
+      "files": {
+        "create": [
+          "scripts/demo/src/checks.ts",
+          "scripts/demo/src/cli.ts",
+          "scripts/demo/src/main.ts"
+        ],
+        "modify": [],
+        "test": [
+          "scripts/demo/src/cli.test.ts"
+        ]
+      },
+      "provides": [
+        "pnpm --filter @pop/demo run demo <command>: caller buy|post|sell|try-gate, status, agent, health, api get, trades, balances, devex-check",
+        "pop-demo health → PASS when POP_FEED_URL serves the feed, /api/health is ok on chain 56 with W3W keys and the keeper on, and /api/tokens is not degraded (S1)",
+        "pop-demo agent → PASS when IdentityRegistry.getAgentWallet(ANALYST_AGENT_ID) is ANALYST_WALLET (prints the integrity score)",
+        "pop-demo devex-check --sections <names> → PASS when each DEVEX_LOG.md section has evidence"
+      ],
+      "requires": [
+        "devexProblems(text, sections): string[]; sectionBullets(text, heading); DEVEX_SECTIONS; SMOKE_SECTIONS",
+        "loadDemoEnv(env): DemoEnv { registry, rpcUrls, w3w, callerKey, telemetryFile, feedUrl, analystAgentId, analystWallet }",
+        "callerBuy(deps, token, usdt); callerPost(deps, token, amount, note): Promise<{ callId; txHash }>; callerSell(deps, token) (whole balance); callerTryGate(deps, token, amount, broadcast): Promise<{ wouldSucceed; failReason; txHash }>; TRY_GATE_GAS = 200000n",
+        "demo test helpers (scripts/demo/src/testing.ts): REGISTRY, CALLER, ROUTER, NVDAB, rawCall, demoWorld(options)",
+        "import { … } from \"@pop/core\" (Node entry: every core module)"
+      ],
+      "gate": {
+        "run": "pnpm --filter @pop/demo run verify",
+        "expect": "PASS — `tsc` prints no errors, then `Test Files  3 passed (3)` and `Tests  19 passed (19)`"
+      },
+      "commit": "feat(demo): pop-demo status, agent, health, api, trades, balances and devex-check",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "launch:4",
+      "subsystem": "launch",
+      "title": "Deployment files",
+      "plan": "docs/superpowers/plans/2026-10-07-launch.md",
+      "depends_on": [
+        "launch:1",
+        "feed:8",
+        "feed:17",
+        "agents:11"
+      ],
+      "effort": "medium",
+      "model_tier": "standard",
+      "files": {
+        "create": [
+          "deploy/docker-compose.yml",
+          "deploy/Caddyfile",
+          "deploy/caddy.Dockerfile",
+          "deploy/server.Dockerfile",
+          "deploy/analyst.Dockerfile",
+          "deploy/.env.example",
+          "deploy/server.env.example",
+          "deploy/analyst.env.example",
+          ".dockerignore"
+        ],
+        "modify": [],
+        "test": [
+          "scripts/demo/src/deploy.test.ts"
+        ]
+      },
+      "provides": [
+        "deploy/docker-compose.yml (services caddy, server, analyst; run from the repo root: docker compose -f deploy/docker-compose.yml up -d --build; env from deploy/.env, deploy/server.env, deploy/analyst.env and agents/popanalyst/.studio/.env.local)",
+        "deploy/Caddyfile ({$PUBLIC_HOST}: /api/* → server:8787, /agent/* → analyst:9000 with the prefix stripped, everything else → the static feed)"
+      ],
+      "requires": [
+        "@pop/demo package (scripts/demo; dependencies @pop/core workspace:*, viem ^2.57.3, zod ^3.25.76; scripts demo (tsx src/main.ts), test, typecheck, verify)",
+        "pnpm --filter @pop/server start (tsx src/main.ts; serves /api on 0.0.0.0:PORT; runs the recordExit keeper when KEEPER_PK and W3W keys are set)",
+        "pnpm --filter @pop/web run build → apps/web/dist (static site; build-time VITE_REGISTRY_ADDRESS, VITE_RPC_URLS, VITE_API_BASE; /api served by @pop/server on the same origin)",
+        "startAnalystLoop(env?, log?): LoopHandle | null; scheduleCycles(run, { intervalMs, firstDelayMs, log, timers? }); studioSigner(): TxSigner"
+      ],
+      "gate": {
+        "run": "pnpm --filter @pop/demo run verify",
+        "expect": "PASS — `tsc` prints no errors, then `Test Files  4 passed (4)` and `Tests  23 passed (23)`"
+      },
+      "commit": "feat(deploy): Docker Compose with Caddy, the API server and the analyst",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "launch:5",
+      "subsystem": "launch",
+      "title": "VPS, deployment and smoke check S1 (HUMAN-GATED)",
+      "plan": "docs/superpowers/plans/2026-10-07-launch.md",
+      "depends_on": [
+        "launch:3",
+        "launch:4",
+        "contracts:11",
+        "contracts:12",
+        "agents:12"
+      ],
+      "effort": "high",
+      "model_tier": "top",
+      "files": {
+        "create": [],
+        "modify": [
+          "DEVEX_LOG.md"
+        ],
+        "test": []
+      },
+      "provides": [
+        "live feed at https://$PUBLIC_HOST (feed, /api, /agent) on a Singapore VPS"
+      ],
+      "requires": [
+        "pop-demo health → PASS when POP_FEED_URL serves the feed, /api/health is ok on chain 56 with W3W keys and the keeper on, and /api/tokens is not degraded (S1)",
+        "deploy/docker-compose.yml (services caddy, server, analyst; run from the repo root: docker compose -f deploy/docker-compose.yml up -d --build; env from deploy/.env, deploy/server.env, deploy/analyst.env and agents/popanalyst/.studio/.env.local)",
+        "deployments/bsc-mainnet.json { chainId, callRegistry, deployTx, deployBlock, owner, identityRegistry, reputationRegistry }",
+        "CallRegistry token list live on BSC mainnet (547 PLAIN + 128 XSTOCK)",
+        "analyst wallet funded and configured (agents/popanalyst/app/agent/studio.toml [wallet].address, Pieverse key, paid model, CMC trust, budget ≤ $1/day)"
+      ],
+      "gate": {
+        "run": "pnpm --filter @pop/demo run demo health",
+        "expect": "PASS — five `PASS …` lines, then `PASS`"
+      },
+      "commit": "chore(launch): deploy on the Singapore VPS; S1 evidence",
+      "human_gate": true,
+      "gate_profile": "deploy",
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "launch:6",
+      "subsystem": "launch",
+      "title": "Register the analyst on ERC-8004 and switch it on (HUMAN-GATED)",
+      "plan": "docs/superpowers/plans/2026-10-07-launch.md",
+      "depends_on": [
+        "launch:3",
+        "launch:5"
+      ],
+      "effort": "medium",
+      "model_tier": "top",
+      "files": {
+        "create": [],
+        "modify": [
+          "agents/popanalyst/app/agent/studio.toml",
+          "DEVEX_LOG.md"
+        ],
+        "test": []
+      },
+      "provides": [
+        "analyst registered as ERC-8004 agent ANALYST_AGENT_ID with endpoint https://$PUBLIC_HOST/agent, loop enabled on the VPS"
+      ],
+      "requires": [
+        "pop-demo agent → PASS when IdentityRegistry.getAgentWallet(ANALYST_AGENT_ID) is ANALYST_WALLET (prints the integrity score)",
+        "live feed at https://$PUBLIC_HOST (feed, /api, /agent) on a Singapore VPS"
+      ],
+      "gate": {
+        "run": "pnpm --filter @pop/demo run demo agent",
+        "expect": "PASS — `agent #<id> wallet 0x… ✓`, an integrity line, then `PASS`"
+      },
+      "commit": "chore(analyst): ERC-8004 registration; analyst loop enabled",
+      "human_gate": true,
+      "gate_profile": "wallet",
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "launch:7",
+      "subsystem": "launch",
+      "title": "Smoke checks S2–S4 (HUMAN-GATED)",
+      "plan": "docs/superpowers/plans/2026-10-07-launch.md",
+      "depends_on": [
+        "launch:3",
+        "launch:5",
+        "agents:5"
+      ],
+      "effort": "medium",
+      "model_tier": "top",
+      "files": {
+        "create": [],
+        "modify": [
+          "DEVEX_LOG.md"
+        ],
+        "test": []
+      },
+      "provides": [
+        "DEVEX_LOG.md evidence for S2 (Market trades lag), S3 (Address Portfolio coverage) and S4 (Agentic Wallet round trip)"
+      ],
+      "requires": [
+        "pop-demo devex-check --sections <names> → PASS when each DEVEX_LOG.md section has evidence",
+        "live feed at https://$PUBLIC_HOST (feed, /api, /agent) on a Singapore VPS",
+        "pop-follower CLI: main(argv, overrides?): Promise<number> with check | run --caller … --budget-usdt … [--max-open] [--include-existing] [--once] | status | smoke --token … --usdt … [--yes]; USAGE"
+      ],
+      "gate": {
+        "run": "pnpm --filter @pop/demo run demo devex-check --sections S2,S3,S4",
+        "expect": "PASS"
+      },
+      "commit": "docs(devex): smoke checks S2-S4 evidence",
+      "human_gate": true,
+      "gate_profile": "wallet",
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "launch:8",
+      "subsystem": "launch",
+      "title": "S5 and the money-shot rehearsal (HUMAN-GATED)",
+      "plan": "docs/superpowers/plans/2026-10-07-launch.md",
+      "depends_on": [
+        "launch:3",
+        "launch:6",
+        "launch:7"
+      ],
+      "effort": "high",
+      "model_tier": "top",
+      "files": {
+        "create": [],
+        "modify": [
+          "DEVEX_LOG.md"
+        ],
+        "test": []
+      },
+      "provides": [
+        "DEVEX_LOG.md evidence for S5 (analyst integrity feedback = 100) and the timed money-shot rehearsal"
+      ],
+      "requires": [
+        "pop-demo devex-check --sections <names> → PASS when each DEVEX_LOG.md section has evidence",
+        "analyst registered as ERC-8004 agent ANALYST_AGENT_ID with endpoint https://$PUBLIC_HOST/agent, loop enabled on the VPS",
+        "DEVEX_LOG.md evidence for S2 (Market trades lag), S3 (Address Portfolio coverage) and S4 (Agentic Wallet round trip)"
+      ],
+      "gate": {
+        "run": "pnpm --filter @pop/demo run demo devex-check --sections S5,Rehearsal",
+        "expect": "PASS"
+      },
+      "commit": "docs(devex): S5 integrity check and money-shot rehearsal timings",
+      "human_gate": true,
+      "gate_profile": "wallet",
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "launch:9",
+      "subsystem": "launch",
+      "title": "README (R1-web-app v1)",
+      "plan": "docs/superpowers/plans/2026-10-07-launch.md",
+      "depends_on": [
+        "launch:3",
+        "launch:4",
+        "feed:17",
+        "agents:6",
+        "contracts:10"
+      ],
+      "effort": "medium",
+      "model_tier": "standard",
+      "files": {
+        "create": [],
+        "modify": [
+          "README.md"
+        ],
+        "test": []
+      },
+      "provides": [
+        "README.md (schema R1-web-app v1; TBD-post-build lines for the demo video, live URL, screenshot, CallRegistry address, deploy tx and analyst agent id)"
+      ],
+      "requires": [
+        "pnpm --filter @pop/demo run demo <command>: caller buy|post|sell|try-gate, status, agent, health, api get, trades, balances, devex-check",
+        "deploy/docker-compose.yml (services caddy, server, analyst; run from the repo root: docker compose -f deploy/docker-compose.yml up -d --build; env from deploy/.env, deploy/server.env, deploy/analyst.env and agents/popanalyst/.studio/.env.local)",
+        "App (hash-routed Feed, Call, Post and How pages; live badges; flip toasts and notifications; follow modal; disclaimers)",
+        "Wallet Skill skills/pop-follower (SKILL.md frontmatter name pop-follower, bins baw + pop-follower; references/commands.md, policy.md, troubleshooting.md)",
+        "node contracts/script/deployment.mjs record | check [--tokens] | probe-tokens"
+      ],
+      "gate": {
+        "run": "$want = @('# Proof of Position','## Demo','## What it does','## Quickstart','## Built at BNB Hack: Tokenized Stocks Edition','## How it works','## Tech stack','## Run locally','## Contract addresses','## Roadmap','## License'); $stamp = '<!-- readme-schema: R1-web-app v1 -->'; $lines = Get-Content README.md -Encoding UTF8; $inFence = $false; $got = foreach ($l in $lines) { if ($l -match '^\\x60\\x60\\x60') { $inFence = -not $inFence } elseif (-not $inFence -and $l -cmatch '^#{1,2} ') { $l } }; $ok = ($got.Count -eq $want.Count); if ($ok) { for ($i = 0; $i -lt $want.Count; $i++) { if ($got[$i] -cne $want[$i]) { $ok = $false } } }; if ($ok -and ($lines[0] -ceq $stamp)) { 'PASS' } else { 'FAIL' }",
+        "expect": "PASS"
+      },
+      "commit": "docs: README (R1-web-app v1) with the judge path and run instructions",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "launch:10",
+      "subsystem": "launch",
+      "title": "Pre-public cleanup",
+      "plan": "docs/superpowers/plans/2026-10-07-launch.md",
+      "depends_on": [
+        "launch:9"
+      ],
+      "effort": "low",
+      "model_tier": "standard",
+      "files": {
+        "create": [
+          "scripts/public-ready.mjs"
+        ],
+        "modify": [
+          "docs/resources/2026-10-05-bnb-hack-tokenized-stocks/2026-10-05-sharepay-brief.md",
+          "docs/resources/2026-10-05-bnb-hack-tokenized-stocks/telegram-intel-2026-10-06.md",
+          "docs/resources/2026-10-05-bnb-hack-tokenized-stocks/INDEX.md",
+          "docs/resources/2026-10-05-bnb-hack-tokenized-stocks/prior-art.md"
+        ],
+        "test": []
+      },
+      "provides": [
+        "node scripts/public-ready.mjs → PASS when the two pack files are gone, no Markdown link points at them, and no env file, keystore or key is tracked (warns if they remain in git history)"
+      ],
+      "requires": [
+        "README.md (schema R1-web-app v1; TBD-post-build lines for the demo video, live URL, screenshot, CallRegistry address, deploy tx and analyst agent id)"
+      ],
+      "gate": {
+        "run": "node scripts/public-ready.mjs",
+        "expect": "PASS"
+      },
+      "commit": "chore: remove two pack files before publication and add the public-ready check",
       "human_gate": false,
       "allow_empty": false,
       "status": "pending"

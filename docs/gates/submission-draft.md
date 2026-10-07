@@ -33,7 +33,7 @@ Followers' agents exit with the caller. Our follower agent, packaged as a Wallet
 **Binance Web3 API modules used:**
 - **RWA Data** — `rwa/tokens`, `rwa/price`: token-to-share ratio, issuer and live market status (open/closed/paused with the reason) on every card.
 - **Market** — `trades` with `walletAddressFilter`: the exit evidence on a flipped badge ("sold 0.02 NVIDIA · tx 0x…"); `token/top-liquidity`: the analyst's pool research.
-- **Trading** — `quote`, `swap`, `approve-transaction`: "Follow with $X" and the agents' buys and sells, SWAP routes only.
+- **Trading** — `quote`, `swap`, `approve-transaction`: "Follow with USDT" and the agents' buys and sells, SWAP routes only.
 - **Transaction** — `simulate` before every signed leg, including a no-wallet dry-run of a post that shows the exact on-chain revert reason; `broadcast-transaction` with MEV protection; `gas-price`.
 - **Wallet** — `token-balances-by-address`.
 - **Agentic Wallet / Wallet Skills** — `baw market-order swap` / `list` in the follower agent's entry and its badge-triggered exit.
@@ -63,7 +63,7 @@ Judge path (no wallet, no keys needed):
 1. Open the live feed. Badges are read straight from BSC mainnet every block, and each card links to BscScan.
 2. Press **Try the gate**. It dry-runs a LONG TESLA post from a wallet that holds no TSLAB through the Transaction API `simulate` and shows the real revert: "No position, no call."
 3. Open any call. You'll see the live badge, the market status from RWA Data, and, on flipped calls, the exit transaction with whether it was a sale.
-4. Optional, with your own BSC wallet holding a few USDT: **Follow with $X** quotes, simulates, then lets your wallet approve and buy the same bStock.
+4. Optional, with your own BSC wallet holding a few USDT: **Follow with USDT** quotes, simulates, then lets your wallet approve and buy the same bStock.
 
 Contract and agent facts for the judge note:
 - TBD-post-build:call-registry-address
