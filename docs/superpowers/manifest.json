@@ -3,7 +3,8 @@
   "spec": "docs/superpowers/specs/2026-10-06-proof-of-position-design.md",
   "subsystems": [
     "contracts",
-    "core"
+    "core",
+    "feed"
   ],
   "tasks": [
     {
@@ -964,6 +965,728 @@
         "expect": "PASS — `tsc` prints no errors, then `Test Files  11 passed (11)` and `Tests  59 passed (59)`"
       },
       "commit": "feat(core): Node and browser entry points; strict typecheck clean",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "feed:1",
+      "subsystem": "feed",
+      "title": "Server package and environment config",
+      "plan": "docs/superpowers/plans/2026-10-07-feed.md",
+      "depends_on": [
+        "core:11"
+      ],
+      "effort": "low",
+      "model_tier": "standard",
+      "files": {
+        "create": [
+          "apps/server/package.json",
+          "apps/server/tsconfig.json",
+          "apps/server/src/config.ts"
+        ],
+        "modify": [],
+        "test": [
+          "apps/server/src/config.test.ts"
+        ]
+      },
+      "provides": [
+        "@pop/server package (apps/server; dependencies @pop/core workspace:*, hono ^4.13.13, @hono/node-server ^1.19.17, viem ^2.57.3, zod ^3.25.76; scripts start, test, typecheck, verify)",
+        "loadConfig(env: Record<string, string | undefined>): ServerConfig (REGISTRY_ADDRESS required; PORT default 8787; BSC_RPC_URLS, BSC_LOGS_RPC_URL, W3W_API_KEY + W3W_API_SECRET together or neither, KEEPER_PK optional, DEVEX_TELEMETRY_FILE, CORS_ORIGINS)"
+      ],
+      "requires": [
+        "import { … } from \"@pop/core\" (Node entry: every core module)"
+      ],
+      "gate": {
+        "run": "pnpm --filter @pop/server exec vitest run src/config.test.ts",
+        "expect": "PASS — `Test Files  1 passed (1)` and `Tests  6 passed (6)`"
+      },
+      "commit": "feat(server): @pop/server package and environment config",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "feed:2",
+      "subsystem": "feed",
+      "title": "Server app shell, dependencies and error mapping",
+      "plan": "docs/superpowers/plans/2026-10-07-feed.md",
+      "depends_on": [
+        "feed:1",
+        "core:11"
+      ],
+      "effort": "medium",
+      "model_tier": "standard",
+      "files": {
+        "create": [
+          "apps/server/src/deps.ts",
+          "apps/server/src/errors.ts",
+          "apps/server/src/app.ts",
+          "apps/server/src/testing.ts"
+        ],
+        "modify": [],
+        "test": [
+          "apps/server/src/app.test.ts"
+        ]
+      },
+      "provides": [
+        "ServerDeps { config, w3w: W3wClient | null, chain: ChainClient, logs: LogsClient, now, keeperStatus }; requireW3w(deps): W3wClient",
+        "HttpError(status: 400 | 404 | 409 | 503, code: string, message: string)",
+        "createApp(deps: ServerDeps, routes?: readonly RouteModule[]): Hono; type RouteModule = (deps: ServerDeps) => Hono (mounted under /api)",
+        "server test helpers (apps/server/src/testing.ts): TEST_REGISTRY, CALLER, NVDAB, testConfig, rawCall, fakeChain, fakeLogs, makeDeps, w3wByPath"
+      ],
+      "requires": [
+        "loadConfig(env: Record<string, string | undefined>): ServerConfig (REGISTRY_ADDRESS required; PORT default 8787; BSC_RPC_URLS, BSC_LOGS_RPC_URL, W3W_API_KEY + W3W_API_SECRET together or neither, KEEPER_PK optional, DEVEX_TELEMETRY_FILE, CORS_ORIGINS)",
+        "import { … } from \"@pop/core\" (Node entry: every core module)"
+      ],
+      "gate": {
+        "run": "pnpm --filter @pop/server exec vitest run src/app.test.ts",
+        "expect": "PASS — `Test Files  1 passed (1)` and `Tests  4 passed (4)`"
+      },
+      "commit": "feat(server): Hono app shell with health route and one error mapper",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "feed:3",
+      "subsystem": "feed",
+      "title": "Token catalog route with RWA market status",
+      "plan": "docs/superpowers/plans/2026-10-07-feed.md",
+      "depends_on": [
+        "feed:2",
+        "core:11"
+      ],
+      "effort": "low",
+      "model_tier": "standard",
+      "files": {
+        "create": [
+          "apps/server/src/cache.ts",
+          "apps/server/src/routes/tokens.ts"
+        ],
+        "modify": [],
+        "test": [
+          "apps/server/src/routes/tokens.test.ts"
+        ]
+      },
+      "provides": [
+        "createTtlCache<T>(ttlMs: number, now: () => number): { get(load) }; createKeyedCache<K, T>(now: () => number): { get(key, load, ttlFor) }",
+        "tokensRoutes(deps: ServerDeps): Hono — GET /api/tokens → { updatedAt, degraded: { code, msg } | null, tokens: TokenDto[] } (catalog + RWA name, tokenToShareRatio, priceUsd, status; cached 60 s)"
+      ],
+      "requires": [
+        "ServerDeps { config, w3w: W3wClient | null, chain: ChainClient, logs: LogsClient, now, keeperStatus }; requireW3w(deps): W3wClient",
+        "createApp(deps: ServerDeps, routes?: readonly RouteModule[]): Hono; type RouteModule = (deps: ServerDeps) => Hono (mounted under /api)",
+        "server test helpers (apps/server/src/testing.ts): TEST_REGISTRY, CALLER, NVDAB, testConfig, rawCall, fakeChain, fakeLogs, makeDeps, w3wByPath",
+        "import { … } from \"@pop/core\" (Node entry: every core module)"
+      ],
+      "gate": {
+        "run": "pnpm --filter @pop/server exec vitest run src/routes/tokens.test.ts",
+        "expect": "PASS — `Test Files  1 passed (1)` and `Tests  3 passed (3)`"
+      },
+      "commit": "feat(server): GET /api/tokens merges the catalog with RWA market status",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "feed:4",
+      "subsystem": "feed",
+      "title": "Transaction API dry-run route",
+      "plan": "docs/superpowers/plans/2026-10-07-feed.md",
+      "depends_on": [
+        "feed:2",
+        "core:11"
+      ],
+      "effort": "low",
+      "model_tier": "fast",
+      "files": {
+        "create": [
+          "apps/server/src/routes/dryRun.ts"
+        ],
+        "modify": [],
+        "test": [
+          "apps/server/src/routes/dryRun.test.ts"
+        ]
+      },
+      "provides": [
+        "dryRunRoutes(deps: ServerDeps): Hono — POST /api/dry-run { from, to, data, value? } → { success, status, failReason, balanceChanges }"
+      ],
+      "requires": [
+        "ServerDeps { config, w3w: W3wClient | null, chain: ChainClient, logs: LogsClient, now, keeperStatus }; requireW3w(deps): W3wClient",
+        "createApp(deps: ServerDeps, routes?: readonly RouteModule[]): Hono; type RouteModule = (deps: ServerDeps) => Hono (mounted under /api)",
+        "server test helpers (apps/server/src/testing.ts): TEST_REGISTRY, CALLER, NVDAB, testConfig, rawCall, fakeChain, fakeLogs, makeDeps, w3wByPath",
+        "import { … } from \"@pop/core\" (Node entry: every core module)"
+      ],
+      "gate": {
+        "run": "pnpm --filter @pop/server exec vitest run src/routes/dryRun.test.ts",
+        "expect": "PASS — `Test Files  1 passed (1)` and `Tests  3 passed (3)`"
+      },
+      "commit": "feat(server): POST /api/dry-run through the Transaction API simulate",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "feed:5",
+      "subsystem": "feed",
+      "title": "Follow quote and build routes",
+      "plan": "docs/superpowers/plans/2026-10-07-feed.md",
+      "depends_on": [
+        "feed:2",
+        "core:11"
+      ],
+      "effort": "high",
+      "model_tier": "top",
+      "files": {
+        "create": [
+          "apps/server/src/routes/follow.ts"
+        ],
+        "modify": [],
+        "test": [
+          "apps/server/src/routes/follow.test.ts"
+        ]
+      },
+      "provides": [
+        "followRoutes(deps: ServerDeps): Hono — POST /api/follow/quote → { route: { quoteId, vendorName, toTokenAmount, priceImpactPercent, approveTarget }, toTokenFormatted }; POST /api/follow/build → { next: \"approve\", tx, simulation, spender } | { next: \"swap\", tx, simulation, toTokenAmount, minReceiveAmount } (409 NO_SWAP_ROUTE, 409 SIMULATION_FAILED)"
+      ],
+      "requires": [
+        "ServerDeps { config, w3w: W3wClient | null, chain: ChainClient, logs: LogsClient, now, keeperStatus }; requireW3w(deps): W3wClient",
+        "HttpError(status: 400 | 404 | 409 | 503, code: string, message: string)",
+        "createApp(deps: ServerDeps, routes?: readonly RouteModule[]): Hono; type RouteModule = (deps: ServerDeps) => Hono (mounted under /api)",
+        "server test helpers (apps/server/src/testing.ts): TEST_REGISTRY, CALLER, NVDAB, testConfig, rawCall, fakeChain, fakeLogs, makeDeps, w3wByPath",
+        "import { … } from \"@pop/core\" (Node entry: every core module)"
+      ],
+      "gate": {
+        "run": "pnpm --filter @pop/server exec vitest run src/routes/follow.test.ts",
+        "expect": "PASS — `Test Files  1 passed (1)` and `Tests  6 passed (6)`"
+      },
+      "commit": "feat(server): follow quote and simulated approve/swap builds for bStocks",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "feed:6",
+      "subsystem": "feed",
+      "title": "Exit evidence and its route",
+      "plan": "docs/superpowers/plans/2026-10-07-feed.md",
+      "depends_on": [
+        "feed:2",
+        "feed:3",
+        "core:11"
+      ],
+      "effort": "medium",
+      "model_tier": "standard",
+      "files": {
+        "create": [
+          "apps/server/src/exit/evidence.ts",
+          "apps/server/src/routes/exit.ts"
+        ],
+        "modify": [],
+        "test": [
+          "apps/server/src/routes/exit.test.ts"
+        ]
+      },
+      "provides": [
+        "findExitEvidence(deps: Pick<ServerDeps, \"w3w\" | \"logs\">, call: CallView): Promise<ExitEvidence | null> (Market API sells first, then Transfer logs over the last 400 blocks)",
+        "exitRoutes(deps: ServerDeps): Hono — GET /api/calls/:id/exit → { callId, status, evidence: ExitEvidence | null }"
+      ],
+      "requires": [
+        "ServerDeps { config, w3w: W3wClient | null, chain: ChainClient, logs: LogsClient, now, keeperStatus }; requireW3w(deps): W3wClient",
+        "HttpError(status: 400 | 404 | 409 | 503, code: string, message: string)",
+        "createApp(deps: ServerDeps, routes?: readonly RouteModule[]): Hono; type RouteModule = (deps: ServerDeps) => Hono (mounted under /api)",
+        "server test helpers (apps/server/src/testing.ts): TEST_REGISTRY, CALLER, NVDAB, testConfig, rawCall, fakeChain, fakeLogs, makeDeps, w3wByPath",
+        "createTtlCache<T>(ttlMs: number, now: () => number): { get(load) }; createKeyedCache<K, T>(now: () => number): { get(key, load, ttlFor) }",
+        "import { … } from \"@pop/core\" (Node entry: every core module)"
+      ],
+      "gate": {
+        "run": "pnpm --filter @pop/server exec vitest run src/routes/exit.test.ts",
+        "expect": "PASS — `Test Files  1 passed (1)` and `Tests  6 passed (6)`"
+      },
+      "commit": "feat(server): exit evidence from Market API trades with a Transfer-log fallback",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "feed:7",
+      "subsystem": "feed",
+      "title": "recordExit keeper",
+      "plan": "docs/superpowers/plans/2026-10-07-feed.md",
+      "depends_on": [
+        "feed:2",
+        "core:11"
+      ],
+      "effort": "high",
+      "model_tier": "top",
+      "files": {
+        "create": [
+          "apps/server/src/keeper/keeper.ts"
+        ],
+        "modify": [],
+        "test": [
+          "apps/server/src/keeper/keeper.test.ts"
+        ]
+      },
+      "provides": [
+        "createKeeper(deps: { chain: RegistryReader & PipelineClient; w3w; signer: TxSigner; registry; onRecorded?; onError? }): Keeper { tick(): Promise<number[]> }; startKeeperLoop(keeper, intervalMs?): () => void"
+      ],
+      "requires": [
+        "server test helpers (apps/server/src/testing.ts): TEST_REGISTRY, CALLER, NVDAB, testConfig, rawCall, fakeChain, fakeLogs, makeDeps, w3wByPath",
+        "import { … } from \"@pop/core\" (Node entry: every core module)"
+      ],
+      "gate": {
+        "run": "pnpm --filter @pop/server exec vitest run src/keeper/keeper.test.ts",
+        "expect": "PASS — `Test Files  1 passed (1)` and `Tests  3 passed (3)`"
+      },
+      "commit": "feat(server): recordExit keeper that simulates before every signature",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "feed:8",
+      "subsystem": "feed",
+      "title": "Server entry point and the strict typecheck",
+      "plan": "docs/superpowers/plans/2026-10-07-feed.md",
+      "depends_on": [
+        "feed:1",
+        "feed:2",
+        "feed:3",
+        "feed:4",
+        "feed:5",
+        "feed:6",
+        "feed:7",
+        "core:11"
+      ],
+      "effort": "medium",
+      "model_tier": "standard",
+      "files": {
+        "create": [
+          "apps/server/src/main.ts"
+        ],
+        "modify": [],
+        "test": [
+          "apps/server/src/main.test.ts"
+        ]
+      },
+      "provides": [
+        "buildServer(env: Record<string, string | undefined>, options?: { fetchImpl?: typeof fetch }): { app: Hono; config: ServerConfig; keeper: Keeper | null }; ROUTES",
+        "pnpm --filter @pop/server start (tsx src/main.ts; serves /api on 0.0.0.0:PORT; runs the recordExit keeper when KEEPER_PK and W3W keys are set)"
+      ],
+      "requires": [
+        "loadConfig(env: Record<string, string | undefined>): ServerConfig (REGISTRY_ADDRESS required; PORT default 8787; BSC_RPC_URLS, BSC_LOGS_RPC_URL, W3W_API_KEY + W3W_API_SECRET together or neither, KEEPER_PK optional, DEVEX_TELEMETRY_FILE, CORS_ORIGINS)",
+        "createApp(deps: ServerDeps, routes?: readonly RouteModule[]): Hono; type RouteModule = (deps: ServerDeps) => Hono (mounted under /api)",
+        "tokensRoutes(deps: ServerDeps): Hono — GET /api/tokens → { updatedAt, degraded: { code, msg } | null, tokens: TokenDto[] } (catalog + RWA name, tokenToShareRatio, priceUsd, status; cached 60 s)",
+        "dryRunRoutes(deps: ServerDeps): Hono — POST /api/dry-run { from, to, data, value? } → { success, status, failReason, balanceChanges }",
+        "followRoutes(deps: ServerDeps): Hono — POST /api/follow/quote → { route: { quoteId, vendorName, toTokenAmount, priceImpactPercent, approveTarget }, toTokenFormatted }; POST /api/follow/build → { next: \"approve\", tx, simulation, spender } | { next: \"swap\", tx, simulation, toTokenAmount, minReceiveAmount } (409 NO_SWAP_ROUTE, 409 SIMULATION_FAILED)",
+        "exitRoutes(deps: ServerDeps): Hono — GET /api/calls/:id/exit → { callId, status, evidence: ExitEvidence | null }",
+        "createKeeper(deps: { chain: RegistryReader & PipelineClient; w3w; signer: TxSigner; registry; onRecorded?; onError? }): Keeper { tick(): Promise<number[]> }; startKeeperLoop(keeper, intervalMs?): () => void",
+        "import { … } from \"@pop/core\" (Node entry: every core module)"
+      ],
+      "gate": {
+        "run": "pnpm --filter @pop/server run verify",
+        "expect": "PASS — `tsc` prints no errors, then `Test Files  8 passed (8)` and `Tests  34 passed (34)`"
+      },
+      "commit": "feat(server): entry point wiring routes, telemetry and the keeper",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "feed:9",
+      "subsystem": "feed",
+      "title": "Web package, config and hash router",
+      "plan": "docs/superpowers/plans/2026-10-07-feed.md",
+      "depends_on": [
+        "core:11"
+      ],
+      "effort": "low",
+      "model_tier": "fast",
+      "files": {
+        "create": [
+          "apps/web/package.json",
+          "apps/web/tsconfig.json",
+          "apps/web/vite.config.ts",
+          "apps/web/index.html",
+          "apps/web/src/test-setup.ts",
+          "apps/web/src/config.ts",
+          "apps/web/src/router.ts"
+        ],
+        "modify": [],
+        "test": [
+          "apps/web/src/shell.test.ts"
+        ]
+      },
+      "provides": [
+        "@pop/web package (apps/web; react ^19.3.0, react-dom ^19.3.0, viem ^2.57.3, @pop/core workspace:*; Vite ^7.3.7 + @vitejs/plugin-react ^5.2.0; Vitest jsdom + Testing Library; scripts dev, build, preview, test, typecheck, verify)",
+        "readConfig(env): WebConfig { registry: Address | null, apiBase, rpcUrls, explorer }; config (VITE_REGISTRY_ADDRESS, VITE_RPC_URLS, VITE_API_BASE)",
+        "parseHash(hash: string): Route; hrefFor(route: Route): string; useRoute(): Route (#/, #/calls/:id, #/post, #/how)"
+      ],
+      "requires": [
+        "import { … } from \"@pop/core/browser\" (browser-safe: chain constants and client, token catalog, amount formatting, registry ABI/types/readers; type-only StatusInfo, RwaToken, TokenTrade, Simulation, QuoteRoute)"
+      ],
+      "gate": {
+        "run": "pnpm --filter @pop/web exec vitest run src/shell.test.ts",
+        "expect": "PASS — `Test Files  1 passed (1)` and `Tests  4 passed (4)`"
+      },
+      "commit": "feat(web): @pop/web package with build-time config and a hash router",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "feed:10",
+      "subsystem": "feed",
+      "title": "Live chain reads and flip detection",
+      "plan": "docs/superpowers/plans/2026-10-07-feed.md",
+      "depends_on": [
+        "feed:9",
+        "core:11"
+      ],
+      "effort": "medium",
+      "model_tier": "standard",
+      "files": {
+        "create": [
+          "apps/web/src/chain/diff.ts",
+          "apps/web/src/chain/useLiveCalls.ts",
+          "apps/web/src/chain/client.ts"
+        ],
+        "modify": [],
+        "test": [
+          "apps/web/src/chain/chain.test.ts"
+        ]
+      },
+      "provides": [
+        "diffCalls(previous: readonly CallView[], next: readonly CallView[]): Flip[] (kinds trimmed, exited, closed, exit-recorded)",
+        "useLiveCalls(client, registry, { limit?, onFlips? }): LiveCallsState { calls, total, blockNumber, loading, error }; useLiveCall(client, registry, id); useBlockPoll",
+        "getChainClient(): PublicClient (shared BSC client over config.rpcUrls)"
+      ],
+      "requires": [
+        "@pop/web package (apps/web; react ^19.3.0, react-dom ^19.3.0, viem ^2.57.3, @pop/core workspace:*; Vite ^7.3.7 + @vitejs/plugin-react ^5.2.0; Vitest jsdom + Testing Library; scripts dev, build, preview, test, typecheck, verify)",
+        "readConfig(env): WebConfig { registry: Address | null, apiBase, rpcUrls, explorer }; config (VITE_REGISTRY_ADDRESS, VITE_RPC_URLS, VITE_API_BASE)",
+        "import { … } from \"@pop/core/browser\" (browser-safe: chain constants and client, token catalog, amount formatting, registry ABI/types/readers; type-only StatusInfo, RwaToken, TokenTrade, Simulation, QuoteRoute)"
+      ],
+      "gate": {
+        "run": "pnpm --filter @pop/web exec vitest run src/chain/chain.test.ts",
+        "expect": "PASS — `Test Files  1 passed (1)` and `Tests  5 passed (5)`"
+      },
+      "commit": "feat(web): per-block registry reads and flip detection",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "feed:11",
+      "subsystem": "feed",
+      "title": "API client, token enrichment and formatting",
+      "plan": "docs/superpowers/plans/2026-10-07-feed.md",
+      "depends_on": [
+        "feed:9",
+        "core:11"
+      ],
+      "effort": "low",
+      "model_tier": "standard",
+      "files": {
+        "create": [
+          "apps/web/src/api/client.ts",
+          "apps/web/src/api/useTokens.ts",
+          "apps/web/src/format.ts"
+        ],
+        "modify": [],
+        "test": [
+          "apps/web/src/api/api.test.ts"
+        ]
+      },
+      "provides": [
+        "createApiClient(baseUrl: string, fetchImpl?: typeof fetch): ApiClient { tokens, exit, dryRun, followQuote, followBuild }; ApiError; TokenDto, ExitEvidence, UnsignedTx types",
+        "useTokens(api: ApiClient): TokensState { byAddress, degraded }; catalogOnly()",
+        "format helpers: shortAddress, companyName, declaredShares, tokenAmount, marketStatusLabel, timeAgo, links { tx, address, holding, agent, registry }"
+      ],
+      "requires": [
+        "@pop/web package (apps/web; react ^19.3.0, react-dom ^19.3.0, viem ^2.57.3, @pop/core workspace:*; Vite ^7.3.7 + @vitejs/plugin-react ^5.2.0; Vitest jsdom + Testing Library; scripts dev, build, preview, test, typecheck, verify)",
+        "import { … } from \"@pop/core/browser\" (browser-safe: chain constants and client, token catalog, amount formatting, registry ABI/types/readers; type-only StatusInfo, RwaToken, TokenTrade, Simulation, QuoteRoute)"
+      ],
+      "gate": {
+        "run": "pnpm --filter @pop/web exec vitest run src/api/api.test.ts",
+        "expect": "PASS — `Test Files  1 passed (1)` and `Tests  7 passed (7)`"
+      },
+      "commit": "feat(web): typed API client, token enrichment and formatting helpers",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "feed:12",
+      "subsystem": "feed",
+      "title": "Services context and the call card",
+      "plan": "docs/superpowers/plans/2026-10-07-feed.md",
+      "depends_on": [
+        "feed:9",
+        "feed:11",
+        "core:11"
+      ],
+      "effort": "medium",
+      "model_tier": "standard",
+      "files": {
+        "create": [
+          "apps/web/src/services.tsx",
+          "apps/web/src/testing.tsx",
+          "apps/web/src/components/badge.ts",
+          "apps/web/src/components/StatusBadge.tsx",
+          "apps/web/src/components/AgentBadge.tsx",
+          "apps/web/src/components/ExitEvidenceLine.tsx",
+          "apps/web/src/components/CallCard.tsx"
+        ],
+        "modify": [],
+        "test": [
+          "apps/web/src/components/components.test.tsx"
+        ]
+      },
+      "provides": [
+        "ServicesProvider, useServices(): Services { api: ApiClient; chain: ChainServices; registry: Address | null }",
+        "web test helpers (apps/web/src/testing.tsx): TEST_REGISTRY, CALLER, NVDAB, NVDAB_DTO, rawCall, callView, fakeFetch, fakeChain, testServices, renderWithServices",
+        "CallCard(props: CallCardProps) with StatusBadge, AgentBadge (ERC-8004 integrity), sticky exit line and ExitEvidenceLine; followBlocker(call, token); badgeFor(call); hasFlipped(call)"
+      ],
+      "requires": [
+        "parseHash(hash: string): Route; hrefFor(route: Route): string; useRoute(): Route (#/, #/calls/:id, #/post, #/how)",
+        "createApiClient(baseUrl: string, fetchImpl?: typeof fetch): ApiClient { tokens, exit, dryRun, followQuote, followBuild }; ApiError; TokenDto, ExitEvidence, UnsignedTx types",
+        "format helpers: shortAddress, companyName, declaredShares, tokenAmount, marketStatusLabel, timeAgo, links { tx, address, holding, agent, registry }",
+        "import { … } from \"@pop/core/browser\" (browser-safe: chain constants and client, token catalog, amount formatting, registry ABI/types/readers; type-only StatusInfo, RwaToken, TokenTrade, Simulation, QuoteRoute)"
+      ],
+      "gate": {
+        "run": "pnpm --filter @pop/web exec vitest run src/components/components.test.tsx",
+        "expect": "PASS — `Test Files  1 passed (1)` and `Tests  7 passed (7)`"
+      },
+      "commit": "feat(web): call card with live badge, sticky exit, evidence and agent integrity",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "feed:13",
+      "subsystem": "feed",
+      "title": "Injected wallets (EIP-6963) on BSC",
+      "plan": "docs/superpowers/plans/2026-10-07-feed.md",
+      "depends_on": [
+        "feed:9"
+      ],
+      "effort": "medium",
+      "model_tier": "standard",
+      "files": {
+        "create": [
+          "apps/web/src/wallet/eip6963.ts",
+          "apps/web/src/wallet/useWallet.tsx"
+        ],
+        "modify": [],
+        "test": [
+          "apps/web/src/wallet/wallet.test.tsx"
+        ]
+      },
+      "provides": [
+        "WalletProvider({ children, discover? }), useWallet(): WalletState { providers, address, walletName, error, connect, send }, WalletButton",
+        "EIP-6963 discoverProviders(); ensureBsc(provider) (wallet_switchEthereumChain 0x38, add on 4902); connectWallet(provider); sendTransaction(provider, tx)"
+      ],
+      "requires": [
+        "@pop/web package (apps/web; react ^19.3.0, react-dom ^19.3.0, viem ^2.57.3, @pop/core workspace:*; Vite ^7.3.7 + @vitejs/plugin-react ^5.2.0; Vitest jsdom + Testing Library; scripts dev, build, preview, test, typecheck, verify)"
+      ],
+      "gate": {
+        "run": "pnpm --filter @pop/web exec vitest run src/wallet/wallet.test.tsx",
+        "expect": "PASS — `Test Files  1 passed (1)` and `Tests  6 passed (6)`"
+      },
+      "commit": "feat(web): EIP-6963 wallet discovery and BSC transaction sending",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "feed:14",
+      "subsystem": "feed",
+      "title": "Try the gate and the Post page",
+      "plan": "docs/superpowers/plans/2026-10-07-feed.md",
+      "depends_on": [
+        "feed:9",
+        "feed:11",
+        "feed:12",
+        "feed:13",
+        "core:11"
+      ],
+      "effort": "high",
+      "model_tier": "top",
+      "files": {
+        "create": [
+          "apps/web/src/gate.ts",
+          "apps/web/src/components/TryTheGate.tsx",
+          "apps/web/src/pages/PostPage.tsx"
+        ],
+        "modify": [],
+        "test": [
+          "apps/web/src/gate.test.tsx"
+        ]
+      },
+      "provides": [
+        "dryRunPost(api, chain, args: PostArgs): Promise<DryRunResult> (server Transaction API simulate, RPC simulateContract fallback); encodePost(token, amount, note); revertReason(error); GATE_PROBE_ADDRESS",
+        "TryTheGate (no-wallet judge path: dry-runs post(TSLAB, 0.01) from 0x…c0de and shows the revert reason); DryRunOutcome",
+        "PostPage({ tokens }) (catalog search, shares preview, dry-run before signing, post via the connected wallet, links the new call)"
+      ],
+      "requires": [
+        "parseHash(hash: string): Route; hrefFor(route: Route): string; useRoute(): Route (#/, #/calls/:id, #/post, #/how)",
+        "createApiClient(baseUrl: string, fetchImpl?: typeof fetch): ApiClient { tokens, exit, dryRun, followQuote, followBuild }; ApiError; TokenDto, ExitEvidence, UnsignedTx types",
+        "useTokens(api: ApiClient): TokensState { byAddress, degraded }; catalogOnly()",
+        "format helpers: shortAddress, companyName, declaredShares, tokenAmount, marketStatusLabel, timeAgo, links { tx, address, holding, agent, registry }",
+        "ServicesProvider, useServices(): Services { api: ApiClient; chain: ChainServices; registry: Address | null }",
+        "web test helpers (apps/web/src/testing.tsx): TEST_REGISTRY, CALLER, NVDAB, NVDAB_DTO, rawCall, callView, fakeFetch, fakeChain, testServices, renderWithServices",
+        "WalletProvider({ children, discover? }), useWallet(): WalletState { providers, address, walletName, error, connect, send }, WalletButton",
+        "import { … } from \"@pop/core/browser\" (browser-safe: chain constants and client, token catalog, amount formatting, registry ABI/types/readers; type-only StatusInfo, RwaToken, TokenTrade, Simulation, QuoteRoute)"
+      ],
+      "gate": {
+        "run": "pnpm --filter @pop/web exec vitest run src/gate.test.tsx",
+        "expect": "PASS — `Test Files  1 passed (1)` and `Tests  6 passed (6)`"
+      },
+      "commit": "feat(web): Try the gate dry-run and the Post page (simulate before signing)",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "feed:15",
+      "subsystem": "feed",
+      "title": "Follow with USDT",
+      "plan": "docs/superpowers/plans/2026-10-07-feed.md",
+      "depends_on": [
+        "feed:11",
+        "feed:12",
+        "feed:13",
+        "core:11"
+      ],
+      "effort": "high",
+      "model_tier": "top",
+      "files": {
+        "create": [
+          "apps/web/src/components/FollowModal.tsx"
+        ],
+        "modify": [],
+        "test": [
+          "apps/web/src/components/follow.test.tsx"
+        ]
+      },
+      "provides": [
+        "FollowModal({ call, token, onClose }) (restricted-persons confirmation → quote → approve → swap, each simulated before the wallet signs)"
+      ],
+      "requires": [
+        "createApiClient(baseUrl: string, fetchImpl?: typeof fetch): ApiClient { tokens, exit, dryRun, followQuote, followBuild }; ApiError; TokenDto, ExitEvidence, UnsignedTx types",
+        "format helpers: shortAddress, companyName, declaredShares, tokenAmount, marketStatusLabel, timeAgo, links { tx, address, holding, agent, registry }",
+        "ServicesProvider, useServices(): Services { api: ApiClient; chain: ChainServices; registry: Address | null }",
+        "web test helpers (apps/web/src/testing.tsx): TEST_REGISTRY, CALLER, NVDAB, NVDAB_DTO, rawCall, callView, fakeFetch, fakeChain, testServices, renderWithServices",
+        "WalletProvider({ children, discover? }), useWallet(): WalletState { providers, address, walletName, error, connect, send }, WalletButton",
+        "import { … } from \"@pop/core/browser\" (browser-safe: chain constants and client, token catalog, amount formatting, registry ABI/types/readers; type-only StatusInfo, RwaToken, TokenTrade, Simulation, QuoteRoute)"
+      ],
+      "gate": {
+        "run": "pnpm --filter @pop/web exec vitest run src/components/follow.test.tsx",
+        "expect": "PASS — `Test Files  1 passed (1)` and `Tests  2 passed (2)`"
+      },
+      "commit": "feat(web): Follow with USDT — confirm, quote, approve and swap, all simulated",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "feed:16",
+      "subsystem": "feed",
+      "title": "Watched calls, notifications and toasts",
+      "plan": "docs/superpowers/plans/2026-10-07-feed.md",
+      "depends_on": [
+        "feed:10",
+        "feed:11",
+        "feed:12"
+      ],
+      "effort": "low",
+      "model_tier": "fast",
+      "files": {
+        "create": [
+          "apps/web/src/alerts/alerts.ts",
+          "apps/web/src/alerts/Toasts.tsx"
+        ],
+        "modify": [],
+        "test": [
+          "apps/web/src/alerts/alerts.test.tsx"
+        ]
+      },
+      "provides": [
+        "useWatched(storage?); flipMessage(flip, call, token); notify(title, body); useToasts(ttlMs?); Toasts"
+      ],
+      "requires": [
+        "diffCalls(previous: readonly CallView[], next: readonly CallView[]): Flip[] (kinds trimmed, exited, closed, exit-recorded)",
+        "format helpers: shortAddress, companyName, declaredShares, tokenAmount, marketStatusLabel, timeAgo, links { tx, address, holding, agent, registry }",
+        "web test helpers (apps/web/src/testing.tsx): TEST_REGISTRY, CALLER, NVDAB, NVDAB_DTO, rawCall, callView, fakeFetch, fakeChain, testServices, renderWithServices"
+      ],
+      "gate": {
+        "run": "pnpm --filter @pop/web exec vitest run src/alerts/alerts.test.tsx",
+        "expect": "PASS — `Test Files  1 passed (1)` and `Tests  5 passed (5)`"
+      },
+      "commit": "feat(web): watched calls, browser notifications and flip toasts",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "feed:17",
+      "subsystem": "feed",
+      "title": "Pages, app shell, styles and the production build",
+      "plan": "docs/superpowers/plans/2026-10-07-feed.md",
+      "depends_on": [
+        "feed:9",
+        "feed:10",
+        "feed:11",
+        "feed:12",
+        "feed:13",
+        "feed:14",
+        "feed:15",
+        "feed:16",
+        "core:11"
+      ],
+      "effort": "medium",
+      "model_tier": "standard",
+      "files": {
+        "create": [
+          "apps/web/src/pages/FeedPage.tsx",
+          "apps/web/src/pages/CallPage.tsx",
+          "apps/web/src/pages/HowPage.tsx",
+          "apps/web/src/components/Disclaimer.tsx",
+          "apps/web/src/App.tsx",
+          "apps/web/src/main.tsx",
+          "apps/web/src/styles.css"
+        ],
+        "modify": [],
+        "test": [
+          "apps/web/src/app.test.tsx"
+        ]
+      },
+      "provides": [
+        "App (hash-routed Feed, Call, Post and How pages; live badges; flip toasts and notifications; follow modal; disclaimers)",
+        "pnpm --filter @pop/web run build → apps/web/dist (static site; build-time VITE_REGISTRY_ADDRESS, VITE_RPC_URLS, VITE_API_BASE; /api served by @pop/server on the same origin)"
+      ],
+      "requires": [
+        "readConfig(env): WebConfig { registry: Address | null, apiBase, rpcUrls, explorer }; config (VITE_REGISTRY_ADDRESS, VITE_RPC_URLS, VITE_API_BASE)",
+        "parseHash(hash: string): Route; hrefFor(route: Route): string; useRoute(): Route (#/, #/calls/:id, #/post, #/how)",
+        "useLiveCalls(client, registry, { limit?, onFlips? }): LiveCallsState { calls, total, blockNumber, loading, error }; useLiveCall(client, registry, id); useBlockPoll",
+        "getChainClient(): PublicClient (shared BSC client over config.rpcUrls)",
+        "createApiClient(baseUrl: string, fetchImpl?: typeof fetch): ApiClient { tokens, exit, dryRun, followQuote, followBuild }; ApiError; TokenDto, ExitEvidence, UnsignedTx types",
+        "useTokens(api: ApiClient): TokensState { byAddress, degraded }; catalogOnly()",
+        "ServicesProvider, useServices(): Services { api: ApiClient; chain: ChainServices; registry: Address | null }",
+        "CallCard(props: CallCardProps) with StatusBadge, AgentBadge (ERC-8004 integrity), sticky exit line and ExitEvidenceLine; followBlocker(call, token); badgeFor(call); hasFlipped(call)",
+        "WalletProvider({ children, discover? }), useWallet(): WalletState { providers, address, walletName, error, connect, send }, WalletButton",
+        "TryTheGate (no-wallet judge path: dry-runs post(TSLAB, 0.01) from 0x…c0de and shows the revert reason); DryRunOutcome",
+        "PostPage({ tokens }) (catalog search, shares preview, dry-run before signing, post via the connected wallet, links the new call)",
+        "FollowModal({ call, token, onClose }) (restricted-persons confirmation → quote → approve → swap, each simulated before the wallet signs)",
+        "useWatched(storage?); flipMessage(flip, call, token); notify(title, body); useToasts(ttlMs?); Toasts",
+        "import { … } from \"@pop/core/browser\" (browser-safe: chain constants and client, token catalog, amount formatting, registry ABI/types/readers; type-only StatusInfo, RwaToken, TokenTrade, Simulation, QuoteRoute)"
+      ],
+      "gate": {
+        "run": "pnpm --filter @pop/web run verify",
+        "expect": "PASS — `tsc` prints no errors, then `Test Files  9 passed (9)` and `Tests  45 passed (45)`, then vite prints `✓ built in …`"
+      },
+      "commit": "feat(web): feed, call, post and how pages with toasts, disclaimers and styles",
       "human_gate": false,
       "allow_empty": false,
       "status": "pending"
