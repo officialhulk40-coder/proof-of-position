@@ -1393,7 +1393,7 @@ Message: `feat(contracts): post and postAsAgent gated by the caller's live balan
 - Modify: `contracts/src/CallRegistry.sol`
 - Test: `contracts/test/CallRegistryStatus.t.sol`
 
-**Depends on:** Task 4
+**Depends on:** Task 3, Task 4
 **Effort:** high
 **Model tier:** top
 **Provides:** `CallRegistry.liveStatus(uint256 callId) returns (Status)`, `CallRegistry.statusOf(uint256 callId) returns (Status)`, `CallRegistry.getCalls(uint256 start, uint256 count) returns (Call[] memory calls, Status[] memory statuses)`
@@ -1785,7 +1785,7 @@ Message: `feat(contracts): live HOLDING/TRIMMED/EXITED badges and paged getCalls
 - Modify: `contracts/src/CallRegistry.sol`
 - Test: `contracts/test/CallRegistryLifecycle.t.sol`
 
-**Depends on:** Task 5
+**Depends on:** Task 3, Task 4, Task 5
 **Effort:** xhigh
 **Model tier:** top
 **Provides:** `CallRegistry.recordExit(uint256 callId)`, `CallRegistry.close(uint256 callId)`, `event ExitRecorded(uint256 indexed callId, Status status, uint256 baseBalance, address recordedBy)`, `event CallClosed(uint256 indexed callId, bool heldThrough)`, `event FeedbackWritten(uint256 indexed callId, uint256 indexed agentId, int128 value, string tag2)`, `event FeedbackFailed(uint256 indexed callId, uint256 indexed agentId)`, `contracts/out/CallRegistry.sol/CallRegistry.json (forge artifact holding the final CallRegistry ABI)`
@@ -2382,7 +2382,7 @@ Message: `feat(contracts): sticky recordExit, honest close and registry-written 
 **Files:**
 - Test: `contracts/test/CallRegistryInvariant.t.sol`
 
-**Depends on:** Task 6
+**Depends on:** Task 5, Task 6
 **Effort:** high
 **Model tier:** top
 **Requires:** `CallRegistry.recordExit(uint256 callId)`, `CallRegistry.close(uint256 callId)`, `CallRegistry.getCalls(uint256 start, uint256 count) returns (Call[] memory calls, Status[] memory statuses)`
@@ -2594,7 +2594,7 @@ Message: `test(contracts): invariant suite for badge, single-open-call and feedb
 - Create: `contracts/script/ListTokens.s.sol`
 - Test: `contracts/test/ListTokens.t.sol`
 
-**Depends on:** Task 6
+**Depends on:** Task 3, Task 6
 **Effort:** medium
 **Provides:** `contracts/script/data/tokens.json { source, plain: address[547], xstock: address[128] }`, `ListTokens.list(CallRegistry registry, address[] memory plain, address[] memory xstock) returns (Result memory result)`, `ListTokens.loadTokens() returns (address[] memory plain, address[] memory xstock)`
 **Requires:** `CallRegistry.setTokens(address[] calldata tokens, BalanceModel[] calldata models)`, `CallRegistry.tokenModel(address token) returns (BalanceModel)`
@@ -2820,7 +2820,7 @@ Message: `feat(contracts): pack token list and batched ListTokens script`
 - Create: `contracts/script/DeployCallRegistry.s.sol`
 - Test: `contracts/test/DeployCallRegistry.t.sol`
 
-**Depends on:** Task 6
+**Depends on:** Task 3, Task 6
 **Effort:** low
 **Provides:** `DeployCallRegistry.deploy(address initialOwner) returns (CallRegistry)`, `DeployCallRegistry.run() (broadcasts with the DEPLOYER_PK env key; owner = broadcaster)`
 **Requires:** `contract CallRegistry(address identityRegistry_, address reputationRegistry_, address initialOwner)`
@@ -3315,7 +3315,7 @@ Message: `feat(contracts): deployment record, on-chain check and token probe too
 **Files:**
 - Create: `deployments/bsc-mainnet.json`
 
-**Depends on:** Task 7, Task 8, Task 10
+**Depends on:** Task 7, Task 8, Task 9, Task 10
 **Effort:** medium
 **Model tier:** top
 **Provides:** `deployments/bsc-mainnet.json { chainId, callRegistry, deployTx, deployBlock, owner, identityRegistry, reputationRegistry }`
@@ -3363,7 +3363,7 @@ Message: `chore(deploy): record CallRegistry deployment on BSC mainnet`
 
 **Files:** (none — this task changes on-chain state only)
 
-**Depends on:** Task 11
+**Depends on:** Task 8, Task 10, Task 11
 **Effort:** medium
 **Model tier:** top
 **Provides:** `CallRegistry token list live on BSC mainnet (547 PLAIN + 128 XSTOCK)`

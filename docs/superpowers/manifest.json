@@ -1,0 +1,972 @@
+{
+  "project": "proof-of-position",
+  "spec": "docs/superpowers/specs/2026-10-06-proof-of-position-design.md",
+  "subsystems": [
+    "contracts",
+    "core"
+  ],
+  "tasks": [
+    {
+      "id": "contracts:1",
+      "subsystem": "contracts",
+      "title": "Scaffold the Foundry project, shared types and interfaces",
+      "plan": "docs/superpowers/plans/2026-10-07-contracts.md",
+      "depends_on": [],
+      "effort": "low",
+      "model_tier": "fast",
+      "files": {
+        "create": [
+          "contracts/foundry.toml",
+          "contracts/remappings.txt",
+          "contracts/soldeer.lock",
+          "contracts/.gitignore",
+          "contracts/run-forge.mjs",
+          "contracts/src/CallTypes.sol",
+          "contracts/src/interfaces/IBalanceToken.sol",
+          "contracts/src/interfaces/IXStockShares.sol",
+          "contracts/src/interfaces/IAgentIdentityRegistry.sol",
+          "contracts/src/interfaces/IAgentReputationRegistry.sol"
+        ],
+        "modify": [],
+        "test": [
+          "contracts/test/Scaffold.t.sol"
+        ]
+      },
+      "provides": [
+        "node contracts/run-forge.mjs <forge args>",
+        "enum BalanceModel { UNLISTED, PLAIN, XSTOCK }",
+        "enum Status { HOLDING, TRIMMED, EXITED, CLOSED }",
+        "struct Call { address caller; address token; BalanceModel model; bool hasAgent; bool heldThrough; Status exitStatus; uint64 postedBlock; uint64 postedAt; uint64 closedBlock; uint64 exitBlock; uint256 agentId; uint256 declaredAmount; uint256 declaredBase; string note; }",
+        "interface IBalanceToken { function balanceOf(address holder) external view returns (uint256); }",
+        "interface IXStockShares { function sharesOf(address holder) external view returns (uint256); function getSharesByUnderlyingAmount(uint256 underlyingAmount) external view returns (uint256); }",
+        "interface IAgentIdentityRegistry { function getAgentWallet(uint256 agentId) external view returns (address); }",
+        "interface IAgentReputationRegistry { function giveFeedback(uint256 agentId, int128 value, uint8 valueDecimals, string calldata tag1, string calldata tag2, string calldata endpoint, string calldata feedbackURI, bytes32 feedbackHash) external; }"
+      ],
+      "requires": [],
+      "gate": {
+        "run": "node contracts/run-forge.mjs test --match-contract ScaffoldTest",
+        "expect": "PASS — `Suite result: ok. 2 passed; 0 failed`"
+      },
+      "commit": "chore(contracts): scaffold foundry project, shared types and ERC-8004 interfaces",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "contracts:2",
+      "subsystem": "contracts",
+      "title": "ABI-faithful mocks for tokens and ERC-8004 registries",
+      "plan": "docs/superpowers/plans/2026-10-07-contracts.md",
+      "depends_on": [
+        "contracts:1"
+      ],
+      "effort": "low",
+      "files": {
+        "create": [
+          "contracts/test/mocks/MockPlainToken.sol",
+          "contracts/test/mocks/MockBStock.sol",
+          "contracts/test/mocks/MockXStock.sol",
+          "contracts/test/mocks/MockIdentityRegistry.sol",
+          "contracts/test/mocks/MockReputationRegistry.sol",
+          "contracts/test/mocks/RevertingReputationRegistry.sol"
+        ],
+        "modify": [],
+        "test": [
+          "contracts/test/Mocks.t.sol"
+        ]
+      },
+      "provides": [
+        "contract MockPlainToken(string symbol_) { setBalance(address holder, uint256 amount); transfer(address to, uint256 amount); balanceOf(address) }",
+        "contract MockBStock(string symbol_) is MockPlainToken { setUiMultiplier(uint256 multiplier); balanceOfUI(address holder) }",
+        "contract MockXStock(string symbol_) { setMultiplier(uint256 newMultiplier); setShares(address holder, uint256 shares); sharesOf(address); balanceOf(address holder); getSharesByUnderlyingAmount(uint256); getUnderlyingAmountByShares(uint256) }",
+        "contract MockIdentityRegistry { setAgent(uint256 agentId, address owner_, address wallet); getAgentWallet(uint256 agentId); isAuthorizedOrOwner(address spender, uint256 agentId) }",
+        "contract MockReputationRegistry(MockIdentityRegistry identity_) { giveFeedback(uint256,int128,uint8,string,string,string,string,bytes32); count(); entry(uint256 index) returns (Entry) }",
+        "contract RevertingReputationRegistry { giveFeedback(...) always reverts \"registry down\" }"
+      ],
+      "requires": [
+        "node contracts/run-forge.mjs <forge args>"
+      ],
+      "gate": {
+        "run": "node contracts/run-forge.mjs test --match-contract MocksTest",
+        "expect": "PASS — `Suite result: ok. 6 passed; 0 failed`"
+      },
+      "commit": "test(contracts): add ABI-faithful token and ERC-8004 registry mocks",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "contracts:3",
+      "subsystem": "contracts",
+      "title": "CallRegistry core — ownership and the token list",
+      "plan": "docs/superpowers/plans/2026-10-07-contracts.md",
+      "depends_on": [
+        "contracts:1",
+        "contracts:2"
+      ],
+      "effort": "high",
+      "model_tier": "top",
+      "files": {
+        "create": [
+          "contracts/src/CallRegistry.sol",
+          "contracts/test/utils/RegistryFixture.sol"
+        ],
+        "modify": [],
+        "test": [
+          "contracts/test/CallRegistryAdmin.t.sol"
+        ]
+      },
+      "provides": [
+        "contract CallRegistry(address identityRegistry_, address reputationRegistry_, address initialOwner)",
+        "CallRegistry.setTokens(address[] calldata tokens, BalanceModel[] calldata models)",
+        "CallRegistry.transferOwnership(address newOwner)",
+        "CallRegistry.tokenModel(address token) returns (BalanceModel)",
+        "abstract contract RegistryFixture is Test"
+      ],
+      "requires": [
+        "node contracts/run-forge.mjs <forge args>",
+        "enum BalanceModel { UNLISTED, PLAIN, XSTOCK }",
+        "enum Status { HOLDING, TRIMMED, EXITED, CLOSED }",
+        "struct Call { address caller; address token; BalanceModel model; bool hasAgent; bool heldThrough; Status exitStatus; uint64 postedBlock; uint64 postedAt; uint64 closedBlock; uint64 exitBlock; uint256 agentId; uint256 declaredAmount; uint256 declaredBase; string note; }",
+        "interface IBalanceToken { function balanceOf(address holder) external view returns (uint256); }",
+        "interface IXStockShares { function sharesOf(address holder) external view returns (uint256); function getSharesByUnderlyingAmount(uint256 underlyingAmount) external view returns (uint256); }",
+        "interface IAgentIdentityRegistry { function getAgentWallet(uint256 agentId) external view returns (address); }",
+        "interface IAgentReputationRegistry { function giveFeedback(uint256 agentId, int128 value, uint8 valueDecimals, string calldata tag1, string calldata tag2, string calldata endpoint, string calldata feedbackURI, bytes32 feedbackHash) external; }",
+        "contract MockPlainToken(string symbol_) { setBalance(address holder, uint256 amount); transfer(address to, uint256 amount); balanceOf(address) }",
+        "contract MockBStock(string symbol_) is MockPlainToken { setUiMultiplier(uint256 multiplier); balanceOfUI(address holder) }",
+        "contract MockXStock(string symbol_) { setMultiplier(uint256 newMultiplier); setShares(address holder, uint256 shares); sharesOf(address); balanceOf(address holder); getSharesByUnderlyingAmount(uint256); getUnderlyingAmountByShares(uint256) }",
+        "contract MockIdentityRegistry { setAgent(uint256 agentId, address owner_, address wallet); getAgentWallet(uint256 agentId); isAuthorizedOrOwner(address spender, uint256 agentId) }",
+        "contract MockReputationRegistry(MockIdentityRegistry identity_) { giveFeedback(uint256,int128,uint8,string,string,string,string,bytes32); count(); entry(uint256 index) returns (Entry) }"
+      ],
+      "gate": {
+        "run": "node contracts/run-forge.mjs test --match-contract CallRegistryAdminTest",
+        "expect": "PASS — `Suite result: ok. 11 passed; 0 failed`"
+      },
+      "commit": "feat(contracts): CallRegistry ownership and owner-curated token list",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "contracts:4",
+      "subsystem": "contracts",
+      "title": "Posting — \"No position, no call.\"",
+      "plan": "docs/superpowers/plans/2026-10-07-contracts.md",
+      "depends_on": [
+        "contracts:3"
+      ],
+      "effort": "high",
+      "model_tier": "top",
+      "files": {
+        "create": [],
+        "modify": [
+          "contracts/src/CallRegistry.sol"
+        ],
+        "test": [
+          "contracts/test/CallRegistryPost.t.sol"
+        ]
+      },
+      "provides": [
+        "CallRegistry.post(address token, uint256 amount, string calldata note) returns (uint256 callId)",
+        "CallRegistry.postAsAgent(address token, uint256 amount, uint256 agentId, string calldata note) returns (uint256 callId)",
+        "CallRegistry.callCount() returns (uint256)",
+        "CallRegistry.getCall(uint256 callId) returns (Call memory)",
+        "CallRegistry.openCallOf(address caller, address token) returns (bool open, uint256 callId)"
+      ],
+      "requires": [
+        "contract CallRegistry(address identityRegistry_, address reputationRegistry_, address initialOwner)",
+        "CallRegistry.setTokens(address[] calldata tokens, BalanceModel[] calldata models)",
+        "abstract contract RegistryFixture is Test"
+      ],
+      "gate": {
+        "run": "node contracts/run-forge.mjs test --match-contract CallRegistryPostTest",
+        "expect": "PASS — `Suite result: ok. 19 passed; 0 failed`"
+      },
+      "commit": "feat(contracts): post and postAsAgent gated by the caller's live balance",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "contracts:5",
+      "subsystem": "contracts",
+      "title": "Live badges — statusOf, liveStatus and paged getCalls",
+      "plan": "docs/superpowers/plans/2026-10-07-contracts.md",
+      "depends_on": [
+        "contracts:3",
+        "contracts:4"
+      ],
+      "effort": "high",
+      "model_tier": "top",
+      "files": {
+        "create": [],
+        "modify": [
+          "contracts/src/CallRegistry.sol"
+        ],
+        "test": [
+          "contracts/test/CallRegistryStatus.t.sol"
+        ]
+      },
+      "provides": [
+        "CallRegistry.liveStatus(uint256 callId) returns (Status)",
+        "CallRegistry.statusOf(uint256 callId) returns (Status)",
+        "CallRegistry.getCalls(uint256 start, uint256 count) returns (Call[] memory calls, Status[] memory statuses)"
+      ],
+      "requires": [
+        "CallRegistry.post(address token, uint256 amount, string calldata note) returns (uint256 callId)",
+        "CallRegistry.getCall(uint256 callId) returns (Call memory)",
+        "abstract contract RegistryFixture is Test"
+      ],
+      "gate": {
+        "run": "node contracts/run-forge.mjs test --match-contract CallRegistryStatusTest",
+        "expect": "PASS — `Suite result: ok. 10 passed; 0 failed`"
+      },
+      "commit": "feat(contracts): live HOLDING/TRIMMED/EXITED badges and paged getCalls",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "contracts:6",
+      "subsystem": "contracts",
+      "title": "Lifecycle — sticky recordExit, honest close and registry-written ERC-8004 feedback",
+      "plan": "docs/superpowers/plans/2026-10-07-contracts.md",
+      "depends_on": [
+        "contracts:3",
+        "contracts:4",
+        "contracts:5"
+      ],
+      "effort": "xhigh",
+      "model_tier": "top",
+      "files": {
+        "create": [],
+        "modify": [
+          "contracts/src/CallRegistry.sol"
+        ],
+        "test": [
+          "contracts/test/CallRegistryLifecycle.t.sol"
+        ]
+      },
+      "provides": [
+        "CallRegistry.recordExit(uint256 callId)",
+        "CallRegistry.close(uint256 callId)",
+        "event ExitRecorded(uint256 indexed callId, Status status, uint256 baseBalance, address recordedBy)",
+        "event CallClosed(uint256 indexed callId, bool heldThrough)",
+        "event FeedbackWritten(uint256 indexed callId, uint256 indexed agentId, int128 value, string tag2)",
+        "event FeedbackFailed(uint256 indexed callId, uint256 indexed agentId)",
+        "contracts/out/CallRegistry.sol/CallRegistry.json (forge artifact holding the final CallRegistry ABI)"
+      ],
+      "requires": [
+        "CallRegistry.statusOf(uint256 callId) returns (Status)",
+        "CallRegistry.liveStatus(uint256 callId) returns (Status)",
+        "CallRegistry.postAsAgent(address token, uint256 amount, uint256 agentId, string calldata note) returns (uint256 callId)",
+        "CallRegistry.openCallOf(address caller, address token) returns (bool open, uint256 callId)",
+        "abstract contract RegistryFixture is Test"
+      ],
+      "gate": {
+        "run": "node contracts/run-forge.mjs test --match-contract CallRegistryLifecycleTest",
+        "expect": "PASS — `Suite result: ok. 20 passed; 0 failed`"
+      },
+      "commit": "feat(contracts): sticky recordExit, honest close and registry-written ERC-8004 integrity feedback",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "contracts:7",
+      "subsystem": "contracts",
+      "title": "Invariant suite over random posts, transfers, rebases, exits and closes",
+      "plan": "docs/superpowers/plans/2026-10-07-contracts.md",
+      "depends_on": [
+        "contracts:5",
+        "contracts:6"
+      ],
+      "effort": "high",
+      "model_tier": "top",
+      "files": {
+        "create": [],
+        "modify": [],
+        "test": [
+          "contracts/test/CallRegistryInvariant.t.sol"
+        ]
+      },
+      "provides": [],
+      "requires": [
+        "CallRegistry.recordExit(uint256 callId)",
+        "CallRegistry.close(uint256 callId)",
+        "CallRegistry.getCalls(uint256 start, uint256 count) returns (Call[] memory calls, Status[] memory statuses)"
+      ],
+      "gate": {
+        "run": "node contracts/run-forge.mjs test --match-contract CallRegistryInvariantTest",
+        "expect": "PASS — `Suite result: ok. 1 passed; 0 failed` (the invariant table reports `runs: 64, calls: 2048`)"
+      },
+      "commit": "test(contracts): invariant suite for badge, single-open-call and feedback properties",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "contracts:8",
+      "subsystem": "contracts",
+      "title": "Token list data and the batched ListTokens script",
+      "plan": "docs/superpowers/plans/2026-10-07-contracts.md",
+      "depends_on": [
+        "contracts:3",
+        "contracts:6"
+      ],
+      "effort": "medium",
+      "files": {
+        "create": [
+          "contracts/script/data/generate-tokens.mjs",
+          "contracts/script/data/tokens.json",
+          "contracts/script/ListTokens.s.sol"
+        ],
+        "modify": [],
+        "test": [
+          "contracts/test/ListTokens.t.sol"
+        ]
+      },
+      "provides": [
+        "contracts/script/data/tokens.json { source, plain: address[547], xstock: address[128] }",
+        "ListTokens.list(CallRegistry registry, address[] memory plain, address[] memory xstock) returns (Result memory result)",
+        "ListTokens.loadTokens() returns (address[] memory plain, address[] memory xstock)"
+      ],
+      "requires": [
+        "CallRegistry.setTokens(address[] calldata tokens, BalanceModel[] calldata models)",
+        "CallRegistry.tokenModel(address token) returns (BalanceModel)"
+      ],
+      "gate": {
+        "run": "node contracts/run-forge.mjs test --match-contract ListTokensTest",
+        "expect": "PASS — `Suite result: ok. 3 passed; 0 failed`"
+      },
+      "commit": "feat(contracts): pack token list and batched ListTokens script",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "contracts:9",
+      "subsystem": "contracts",
+      "title": "DeployCallRegistry script",
+      "plan": "docs/superpowers/plans/2026-10-07-contracts.md",
+      "depends_on": [
+        "contracts:3",
+        "contracts:6"
+      ],
+      "effort": "low",
+      "files": {
+        "create": [
+          "contracts/script/DeployCallRegistry.s.sol"
+        ],
+        "modify": [],
+        "test": [
+          "contracts/test/DeployCallRegistry.t.sol"
+        ]
+      },
+      "provides": [
+        "DeployCallRegistry.deploy(address initialOwner) returns (CallRegistry)",
+        "DeployCallRegistry.run() (broadcasts with the DEPLOYER_PK env key; owner = broadcaster)"
+      ],
+      "requires": [
+        "contract CallRegistry(address identityRegistry_, address reputationRegistry_, address initialOwner)"
+      ],
+      "gate": {
+        "run": "node contracts/run-forge.mjs test --match-contract DeployCallRegistryTest",
+        "expect": "PASS — `Suite result: ok. 1 passed; 0 failed`"
+      },
+      "commit": "feat(contracts): DeployCallRegistry script wired to the ERC-8004 mainnet registries",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "contracts:10",
+      "subsystem": "contracts",
+      "title": "Deployment record, on-chain check and token probe tool",
+      "plan": "docs/superpowers/plans/2026-10-07-contracts.md",
+      "depends_on": [
+        "contracts:9"
+      ],
+      "effort": "medium",
+      "files": {
+        "create": [
+          "contracts/script/deployment.mjs"
+        ],
+        "modify": [],
+        "test": [
+          "contracts/script/deployment.test.mjs"
+        ]
+      },
+      "provides": [
+        "node contracts/script/deployment.mjs record | check [--tokens] | probe-tokens",
+        "deploymentFromBroadcast(broadcast) -> { chainId, callRegistry, deployTx, deployBlock, owner, identityRegistry, reputationRegistry }",
+        "checkDeployment(record, { rpcUrl, fetchImpl, tokens }) -> Promise<{ ok, problems, callCount }>",
+        "probeTokens(tokens, { rpcUrl, fetchImpl, batchSize, pauseMs, sleep }) -> Promise<{ probed, failed }>"
+      ],
+      "requires": [
+        "DeployCallRegistry.run() (broadcasts with the DEPLOYER_PK env key; owner = broadcaster)"
+      ],
+      "gate": {
+        "run": "node --test contracts/script/deployment.test.mjs",
+        "expect": "PASS — `pass 7` and `fail 0`"
+      },
+      "commit": "feat(contracts): deployment record, on-chain check and token probe tool",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "contracts:11",
+      "subsystem": "contracts",
+      "title": "(HUMAN-GATED) Deploy CallRegistry to BSC mainnet and record it",
+      "plan": "docs/superpowers/plans/2026-10-07-contracts.md",
+      "depends_on": [
+        "contracts:7",
+        "contracts:8",
+        "contracts:9",
+        "contracts:10"
+      ],
+      "effort": "medium",
+      "model_tier": "top",
+      "files": {
+        "create": [
+          "deployments/bsc-mainnet.json"
+        ],
+        "modify": [],
+        "test": []
+      },
+      "provides": [
+        "deployments/bsc-mainnet.json { chainId, callRegistry, deployTx, deployBlock, owner, identityRegistry, reputationRegistry }"
+      ],
+      "requires": [
+        "DeployCallRegistry.run() (broadcasts with the DEPLOYER_PK env key; owner = broadcaster)",
+        "node contracts/script/deployment.mjs record | check [--tokens] | probe-tokens"
+      ],
+      "gate": {
+        "run": "node contracts/script/deployment.mjs check",
+        "expect": "PASS — `PASS registry=0x… owner=0x… callCount=0`"
+      },
+      "commit": "chore(deploy): record CallRegistry deployment on BSC mainnet",
+      "human_gate": true,
+      "gate_profile": "deploy",
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "contracts:12",
+      "subsystem": "contracts",
+      "title": "(HUMAN-GATED) List the 675 pack tokens on the deployed registry",
+      "plan": "docs/superpowers/plans/2026-10-07-contracts.md",
+      "depends_on": [
+        "contracts:8",
+        "contracts:10",
+        "contracts:11"
+      ],
+      "effort": "medium",
+      "model_tier": "top",
+      "files": {
+        "create": [],
+        "modify": [],
+        "test": []
+      },
+      "provides": [
+        "CallRegistry token list live on BSC mainnet (547 PLAIN + 128 XSTOCK)"
+      ],
+      "requires": [
+        "deployments/bsc-mainnet.json { chainId, callRegistry, deployTx, deployBlock, owner, identityRegistry, reputationRegistry }",
+        "ListTokens.list(CallRegistry registry, address[] memory plain, address[] memory xstock) returns (Result memory result)",
+        "node contracts/script/deployment.mjs record | check [--tokens] | probe-tokens"
+      ],
+      "gate": {
+        "run": "node contracts/script/deployment.mjs check --tokens",
+        "expect": "PASS — `PASS registry=0x… owner=0x… callCount=0 tokens=6/6`"
+      },
+      "commit": "chore(deploy): list the pack tokens on CallRegistry",
+      "human_gate": true,
+      "gate_profile": "deploy",
+      "allow_empty": true,
+      "status": "pending"
+    },
+    {
+      "id": "core:1",
+      "subsystem": "core",
+      "title": "Workspace scaffold and the @pop/core package skeleton",
+      "plan": "docs/superpowers/plans/2026-10-07-core.md",
+      "depends_on": [],
+      "effort": "low",
+      "model_tier": "fast",
+      "files": {
+        "create": [
+          "package.json",
+          "pnpm-workspace.yaml",
+          "tsconfig.base.json",
+          ".gitignore",
+          ".gitattributes",
+          "LICENSE",
+          "packages/core/package.json",
+          "packages/core/tsconfig.json",
+          "packages/core/src/chain/constants.ts"
+        ],
+        "modify": [],
+        "test": [
+          "packages/core/src/chain/constants.test.ts"
+        ]
+      },
+      "provides": [
+        "pnpm workspace root (packages/*, apps/*, agents/follower, scripts/demo; root devDependencies typescript ~5.9.3, vitest ^3.2.7, tsx ^4.23.15, @types/node ^24.19.1)",
+        "tsconfig.base.json (strict, ESM, moduleResolution Bundler, noEmit)",
+        "@pop/core package (packages/core; exports \".\" -> src/index.ts, \"./browser\" -> src/browser.ts; dependencies viem ^2.57.3, zod ^3.25.76; scripts test, typecheck, verify)",
+        "BSC_CHAIN_ID = 56; BINANCE_CHAIN_ID = \"56\"; W3W_BASE_URL = \"https://web3.binance.com\"",
+        "ADDRESSES { identityRegistry, reputationRegistry, usdt, usdc, u, usd1, binanceAggregatorRouter }",
+        "DEFAULT_BSC_RPC_URLS: readonly string[]; DEFAULT_LOGS_RPC_URL: string",
+        "parseRpcUrls(value: string | undefined): string[]"
+      ],
+      "requires": [],
+      "gate": {
+        "run": "pnpm --filter @pop/core exec vitest run src/chain/constants.test.ts",
+        "expect": "PASS — `Test Files  1 passed (1)` and `Tests  3 passed (3)`"
+      },
+      "commit": "chore(core): scaffold pnpm workspace and @pop/core with chain constants",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "core:2",
+      "subsystem": "core",
+      "title": "Binance Web3 API request signer",
+      "plan": "docs/superpowers/plans/2026-10-07-core.md",
+      "depends_on": [
+        "core:1"
+      ],
+      "effort": "medium",
+      "model_tier": "top",
+      "files": {
+        "create": [
+          "packages/core/src/w3w/sign.ts"
+        ],
+        "modify": [],
+        "test": [
+          "packages/core/src/w3w/sign.test.ts"
+        ]
+      },
+      "provides": [
+        "signW3wRequest(input: { secret: string; timestamp: string; method: string; requestPath: string; body: string }): string"
+      ],
+      "requires": [
+        "@pop/core package (packages/core; exports \".\" -> src/index.ts, \"./browser\" -> src/browser.ts; dependencies viem ^2.57.3, zod ^3.25.76; scripts test, typecheck, verify)"
+      ],
+      "gate": {
+        "run": "pnpm --filter @pop/core exec vitest run src/w3w/sign.test.ts",
+        "expect": "PASS — `Test Files  1 passed (1)` and `Tests  4 passed (4)`"
+      },
+      "commit": "feat(core): HMAC-SHA256 request signer for the Binance Web3 API",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "core:3",
+      "subsystem": "core",
+      "title": "Signed API client, typed errors and the in-memory test client",
+      "plan": "docs/superpowers/plans/2026-10-07-core.md",
+      "depends_on": [
+        "core:1",
+        "core:2"
+      ],
+      "effort": "medium",
+      "model_tier": "top",
+      "files": {
+        "create": [
+          "packages/core/src/w3w/client.ts",
+          "packages/core/src/w3w/errors.ts",
+          "packages/core/src/w3w/testing.ts"
+        ],
+        "modify": [],
+        "test": [
+          "packages/core/src/w3w/client.test.ts"
+        ]
+      },
+      "provides": [
+        "createW3wClient(options: { apiKey: string; apiSecret: string; baseUrl?: string; fetchImpl?: typeof fetch; now?: () => Date; clock?: () => number; sleep?: (ms: number) => Promise<void>; onTiming?: (timing: W3wTiming) => void; maxRetries?: number; recvWindowMs?: number }): W3wClient",
+        "interface W3wClient { get<T>(path: string, query: Record<string, QueryValue>, schema: ZodType<T>): Promise<T>; post<T>(path: string, body: unknown, schema: ZodType<T>): Promise<T> }",
+        "interface W3wTiming { method: \"GET\" | \"POST\"; endpoint: string; httpStatus: number; code: number | null; msg: string | null; ms: number }",
+        "class W3wApiError extends Error { code: number; msg: string; httpStatus: number; endpoint: string }",
+        "describeW3wError(error: W3wApiError): string; W3W_ERROR_HINTS",
+        "createFakeW3wClient(handler: (call: RecordedCall) => unknown): { client: W3wClient; calls: RecordedCall[] }"
+      ],
+      "requires": [
+        "signW3wRequest(input: { secret: string; timestamp: string; method: string; requestPath: string; body: string }): string",
+        "BSC_CHAIN_ID = 56; BINANCE_CHAIN_ID = \"56\"; W3W_BASE_URL = \"https://web3.binance.com\""
+      ],
+      "gate": {
+        "run": "pnpm --filter @pop/core exec vitest run src/w3w/client.test.ts",
+        "expect": "PASS — `Test Files  1 passed (1)` and `Tests  7 passed (7)`"
+      },
+      "commit": "feat(core): signed Binance Web3 API client with envelope parsing, typed errors and 429 retries",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "core:4",
+      "subsystem": "core",
+      "title": "DevEx telemetry recorder",
+      "plan": "docs/superpowers/plans/2026-10-07-core.md",
+      "depends_on": [
+        "core:3"
+      ],
+      "effort": "low",
+      "files": {
+        "create": [
+          "packages/core/src/devex/telemetry.ts"
+        ],
+        "modify": [],
+        "test": [
+          "packages/core/src/devex/telemetry.test.ts"
+        ]
+      },
+      "provides": [
+        "createTelemetryRecorder(options: { filePath: string; service: string; now?: () => Date }): (timing: W3wTiming) => void",
+        "createEventRecorder(options: { filePath: string; service: string; now?: () => Date }): (event: TelemetryEvent) => void"
+      ],
+      "requires": [
+        "interface W3wTiming { method: \"GET\" | \"POST\"; endpoint: string; httpStatus: number; code: number | null; msg: string | null; ms: number }"
+      ],
+      "gate": {
+        "run": "pnpm --filter @pop/core exec vitest run src/devex/telemetry.test.ts",
+        "expect": "PASS — `Test Files  1 passed (1)` and `Tests  2 passed (2)`"
+      },
+      "commit": "feat(core): JSONL DevEx telemetry for API timings and agent events",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "core:5",
+      "subsystem": "core",
+      "title": "RWA Data, Market and Wallet API wrappers",
+      "plan": "docs/superpowers/plans/2026-10-07-core.md",
+      "depends_on": [
+        "core:1",
+        "core:3"
+      ],
+      "effort": "medium",
+      "files": {
+        "create": [
+          "packages/core/src/w3w/rwa.ts",
+          "packages/core/src/w3w/market.ts",
+          "packages/core/src/w3w/wallet.ts"
+        ],
+        "modify": [],
+        "test": [
+          "packages/core/src/w3w/data.test.ts"
+        ]
+      },
+      "provides": [
+        "getRwaTokens(client: W3wClient, params?: { platformId?: \"ondo\" | \"bstock\" }): Promise<RwaToken[]>",
+        "getRwaPrices(client: W3wClient, addresses: readonly string[]): Promise<RwaPrice[]>",
+        "type StatusInfo = { openState: boolean; marketStatus: string; reasonCode?: string | null; reasonMsg?: string | null; nextOpenTime?: number | null; nextCloseTime?: number | null }",
+        "type RwaToken = { tokenContractAddress; platformId; tokenName; tokenSymbol; decimals: number; underlyingTicker; underlyingName; tokenToShareRatio: string; statusInfo?: StatusInfo | null; tokenPrice?: string | null; referencePrice?: string | null }",
+        "getTokenTrades(client: W3wClient, params: { token: string; wallets?: readonly string[]; limit?: number; cursor?: string }): Promise<{ cursor: string; trades: TokenTrade[] }>",
+        "type TokenTrade = { txHash; userAddress; dexName?; type: string; price?; volume?; time: number; changedTokenInfo: { amount; tokenSymbol?; tokenContractAddress }[] }",
+        "getTopLiquidityPools(client: W3wClient, token: string): Promise<{ pool: string; protocolName?: string | null; liquidityUsd: string; poolAddress: string }[]>",
+        "getTokenBalances(client: W3wClient, params: { address: string; tokens: readonly string[] }): Promise<TokenAsset[]>"
+      ],
+      "requires": [
+        "interface W3wClient { get<T>(path: string, query: Record<string, QueryValue>, schema: ZodType<T>): Promise<T>; post<T>(path: string, body: unknown, schema: ZodType<T>): Promise<T> }",
+        "createFakeW3wClient(handler: (call: RecordedCall) => unknown): { client: W3wClient; calls: RecordedCall[] }",
+        "BSC_CHAIN_ID = 56; BINANCE_CHAIN_ID = \"56\"; W3W_BASE_URL = \"https://web3.binance.com\""
+      ],
+      "gate": {
+        "run": "pnpm --filter @pop/core exec vitest run src/w3w/data.test.ts",
+        "expect": "PASS — `Test Files  1 passed (1)` and `Tests  7 passed (7)`"
+      },
+      "commit": "feat(core): typed RWA Data, Market and Wallet API wrappers",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "core:6",
+      "subsystem": "core",
+      "title": "Trading and Transaction API wrappers",
+      "plan": "docs/superpowers/plans/2026-10-07-core.md",
+      "depends_on": [
+        "core:1",
+        "core:3"
+      ],
+      "effort": "medium",
+      "files": {
+        "create": [
+          "packages/core/src/w3w/trading.ts",
+          "packages/core/src/w3w/transaction.ts"
+        ],
+        "modify": [],
+        "test": [
+          "packages/core/src/w3w/trade.test.ts"
+        ]
+      },
+      "provides": [
+        "getQuote(client: W3wClient, params: { fromToken: string; toToken: string; amount: bigint; userWalletAddress: string }): Promise<QuoteRoute[]>",
+        "type QuoteRoute = { quoteId; vendorName; fromTokenAmount; toTokenAmount; priceImpactPercent?; executionMode: string; approveTarget?; isBest?; tradeFee? }",
+        "pickSwapRoute(routes: readonly QuoteRoute[]): QuoteRoute | null",
+        "buildSwap(client: W3wClient, params: { fromToken; toToken; amount: bigint; userWalletAddress; quoteId: string; slippagePercent?: string; autoSlippage?: boolean }): Promise<{ routerResult; tx: { from; to; data; value; gas?; gasPrice?; minReceiveAmount? }; executionMode; rfq? }>",
+        "getApproveTransaction(client: W3wClient, params: { token: string; amount: bigint; vendor?: string }): Promise<{ data: string; dexContractAddress: string; gasLimit?: string | null; gasPrice?: string | null }>",
+        "simulateTx(client: W3wClient, tx: { from: string; to: string; value: string; data: string }): Promise<Simulation>",
+        "type Simulation = { status: string; failReason?: string | null; balanceChanges: { contractAddress; tokenType?; change; owner }[]; allowanceChanges: { tokenAddress; owner; spender; preAmount; postAmount }[] }",
+        "isSimulationSuccess(simulation: Simulation): boolean",
+        "simulationFailure(simulation: Simulation): string",
+        "broadcastTx(client: W3wClient, params: { signedTransaction: string; address: string; enableMevProtection: boolean }): Promise<{ orderId: string; txHash: string }>",
+        "getMediumGasPrice(client: W3wClient): Promise<bigint>"
+      ],
+      "requires": [
+        "interface W3wClient { get<T>(path: string, query: Record<string, QueryValue>, schema: ZodType<T>): Promise<T>; post<T>(path: string, body: unknown, schema: ZodType<T>): Promise<T> }",
+        "createFakeW3wClient(handler: (call: RecordedCall) => unknown): { client: W3wClient; calls: RecordedCall[] }",
+        "BSC_CHAIN_ID = 56; BINANCE_CHAIN_ID = \"56\"; W3W_BASE_URL = \"https://web3.binance.com\""
+      ],
+      "gate": {
+        "run": "pnpm --filter @pop/core exec vitest run src/w3w/trade.test.ts",
+        "expect": "PASS — `Test Files  1 passed (1)` and `Tests  9 passed (9)`"
+      },
+      "commit": "feat(core): typed Trading (quote, swap, approve) and Transaction (simulate, broadcast, gas) wrappers",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "core:7",
+      "subsystem": "core",
+      "title": "Token catalog generated from the pack registry",
+      "plan": "docs/superpowers/plans/2026-10-07-core.md",
+      "depends_on": [
+        "core:1"
+      ],
+      "effort": "low",
+      "files": {
+        "create": [
+          "packages/core/scripts/generate-catalog.mjs",
+          "packages/core/src/tokens/types.ts",
+          "packages/core/src/tokens/catalog.generated.ts",
+          "packages/core/src/tokens/catalog.ts"
+        ],
+        "modify": [],
+        "test": [
+          "packages/core/src/tokens/catalog.test.ts"
+        ]
+      },
+      "provides": [
+        "TOKEN_CATALOG: readonly TokenInfo[] (675 tokens: 87 bStocks, 458 Ondo, 130 xStocks; 547 PLAIN, 128 XSTOCK)",
+        "interface TokenInfo { address: lower-case 0x address; symbol: string; ticker: string; issuer: \"bStocks\" | \"Ondo\" | \"xStocks\"; model: \"PLAIN\" | \"XSTOCK\"; assetType: 1 | 2 | 3 | null }",
+        "getTokenInfo(address: string): TokenInfo | undefined",
+        "getTokenBySymbol(symbol: string): TokenInfo | undefined",
+        "requireTokenBySymbol(symbol: string): TokenInfo",
+        "findTokens(query: string, limit?: number): TokenInfo[]",
+        "tokensByIssuer(issuer: \"bStocks\" | \"Ondo\" | \"xStocks\"): TokenInfo[]",
+        "isFollowable(token: TokenInfo): boolean",
+        "DEFAULT_WATCHLIST: readonly string[] = [\"NVDAB\", \"TSLAB\", \"AAPLB\", \"SPYB\"]"
+      ],
+      "requires": [
+        "@pop/core package (packages/core; exports \".\" -> src/index.ts, \"./browser\" -> src/browser.ts; dependencies viem ^2.57.3, zod ^3.25.76; scripts test, typecheck, verify)"
+      ],
+      "gate": {
+        "run": "pnpm --filter @pop/core exec vitest run src/tokens/catalog.test.ts",
+        "expect": "PASS — `Test Files  1 passed (1)` and `Tests  4 passed (4)`"
+      },
+      "commit": "feat(core): token catalog generated from the 675-row pack registry",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "core:8",
+      "subsystem": "core",
+      "title": "Amount, share and USD formatting",
+      "plan": "docs/superpowers/plans/2026-10-07-core.md",
+      "depends_on": [
+        "core:1"
+      ],
+      "effort": "low",
+      "files": {
+        "create": [
+          "packages/core/src/format/amounts.ts"
+        ],
+        "modify": [],
+        "test": [
+          "packages/core/src/format/amounts.test.ts"
+        ]
+      },
+      "provides": [
+        "parseUnits18(value: string): bigint",
+        "formatUnits18(raw: bigint, maxFractionDigits?: number): string",
+        "toShares(raw: bigint, tokenToShareRatio: string, maxFractionDigits?: number): string",
+        "toUsd(raw: bigint, priceUsd: string): string"
+      ],
+      "requires": [
+        "@pop/core package (packages/core; exports \".\" -> src/index.ts, \"./browser\" -> src/browser.ts; dependencies viem ^2.57.3, zod ^3.25.76; scripts test, typecheck, verify)"
+      ],
+      "gate": {
+        "run": "pnpm --filter @pop/core exec vitest run src/format/amounts.test.ts",
+        "expect": "PASS — `Test Files  1 passed (1)` and `Tests  5 passed (5)`"
+      },
+      "commit": "feat(core): 18-decimal amount, share and USD formatting",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "core:9",
+      "subsystem": "core",
+      "title": "CallRegistry ABI, call views, registry readers and the BSC client",
+      "plan": "docs/superpowers/plans/2026-10-07-core.md",
+      "depends_on": [
+        "core:1",
+        "contracts:1",
+        "contracts:6"
+      ],
+      "effort": "medium",
+      "files": {
+        "create": [
+          "packages/core/scripts/generate-registry-abi.mjs",
+          "packages/core/src/registry/abi.generated.ts",
+          "packages/core/src/registry/abis.ts",
+          "packages/core/src/registry/types.ts",
+          "packages/core/src/registry/read.ts",
+          "packages/core/src/chain/client.ts"
+        ],
+        "modify": [],
+        "test": [
+          "packages/core/src/registry/registry.test.ts"
+        ]
+      },
+      "provides": [
+        "CALL_REGISTRY_ABI (const ABI generated from the CallRegistry forge artifact)",
+        "ERC20_ABI; REPUTATION_REGISTRY_ABI (getSummary, readFeedback, getLastIndex); IDENTITY_REGISTRY_ABI (getAgentWallet, ownerOf, tokenURI, register, Registered)",
+        "type CallStatus = \"HOLDING\" | \"TRIMMED\" | \"EXITED\" | \"CLOSED\"",
+        "interface CallView { id: number; caller: Address; token: Address; model: \"UNLISTED\" | \"PLAIN\" | \"XSTOCK\"; hasAgent: boolean; heldThrough: boolean; exitStatus: CallStatus; postedBlock: bigint; postedAt: number; closedBlock: bigint; exitBlock: bigint; agentId: bigint; declaredAmount: bigint; declaredBase: bigint; note: string; status: CallStatus }",
+        "toCallView(id: number, raw: RawCall, status: number): CallView",
+        "needsExitRecord(call: CallView): boolean",
+        "type RegistryReader = Pick<PublicClient, \"readContract\">",
+        "readCallCount(client: RegistryReader, registry: Address): Promise<number>",
+        "readCallsPage(client: RegistryReader, registry: Address, start: number, count: number): Promise<CallView[]>",
+        "readLatestCalls(client: RegistryReader, registry: Address, limit: number): Promise<{ total: number; calls: CallView[] }>",
+        "readCallsFrom(client: RegistryReader, registry: Address, fromId: number, pageSize?: number): Promise<CallView[]>",
+        "readAgentIntegrity(client: RegistryReader, params: { reputationRegistry: Address; registry: Address; agentId: bigint }): Promise<{ count: number; score: number | null }>",
+        "createBscPublicClient(rpcUrls?: readonly string[], options?: { pollingIntervalMs?: number }): PublicClient"
+      ],
+      "requires": [
+        "node contracts/run-forge.mjs <forge args>",
+        "contracts/out/CallRegistry.sol/CallRegistry.json (forge artifact holding the final CallRegistry ABI)",
+        "@pop/core package (packages/core; exports \".\" -> src/index.ts, \"./browser\" -> src/browser.ts; dependencies viem ^2.57.3, zod ^3.25.76; scripts test, typecheck, verify)",
+        "BSC_CHAIN_ID = 56; BINANCE_CHAIN_ID = \"56\"; W3W_BASE_URL = \"https://web3.binance.com\"",
+        "DEFAULT_BSC_RPC_URLS: readonly string[]; DEFAULT_LOGS_RPC_URL: string"
+      ],
+      "gate": {
+        "run": "pnpm --filter @pop/core exec vitest run src/registry/registry.test.ts",
+        "expect": "PASS — `Test Files  1 passed (1)` and `Tests  9 passed (9)`"
+      },
+      "commit": "feat(core): generated CallRegistry ABI, call views, registry readers and BSC client",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "core:10",
+      "subsystem": "core",
+      "title": "Transaction pipeline — simulate, sign, broadcast with MEV protection, confirm",
+      "plan": "docs/superpowers/plans/2026-10-07-core.md",
+      "depends_on": [
+        "core:1",
+        "core:3",
+        "core:6"
+      ],
+      "effort": "high",
+      "model_tier": "top",
+      "files": {
+        "create": [
+          "packages/core/src/tx/pipeline.ts"
+        ],
+        "modify": [],
+        "test": [
+          "packages/core/src/tx/pipeline.test.ts"
+        ]
+      },
+      "provides": [
+        "sendWithTransactionApi(params: { w3w: W3wClient; client: PipelineClient; signer: TxSigner; tx: { to: Address; data: Hex; value?: bigint; gas?: bigint; gasPrice?: bigint }; mev: boolean; gasBufferPercent?: number; receiptTimeoutMs?: number; clock?: () => number }): Promise<{ txHash: Hex; orderId: string; receipt: TransactionReceipt; simulation: Simulation; timings: { simulateMs: number; broadcastMs: number; confirmMs: number } }>",
+        "interface TxSigner { address: Address; signTransaction(tx: LegacyTxRequest): Promise<Hex> }",
+        "interface LegacyTxRequest { chainId: number; nonce: number; to: Address; data: Hex; value: bigint; gas: bigint; gasPrice: bigint }",
+        "type PipelineClient = Pick<PublicClient, \"getTransactionCount\" | \"getGasPrice\" | \"estimateGas\" | \"waitForTransactionReceipt\">",
+        "class SimulationFailedError extends Error { reason: string }",
+        "viemAccountSigner(account: LocalAccount): TxSigner",
+        "walletProviderSigner(wallet: { address: Address; signTransaction(tx: LegacyTxRequest): Promise<{ rawTransaction: Hex }> }): TxSigner"
+      ],
+      "requires": [
+        "simulateTx(client: W3wClient, tx: { from: string; to: string; value: string; data: string }): Promise<Simulation>",
+        "isSimulationSuccess(simulation: Simulation): boolean",
+        "simulationFailure(simulation: Simulation): string",
+        "broadcastTx(client: W3wClient, params: { signedTransaction: string; address: string; enableMevProtection: boolean }): Promise<{ orderId: string; txHash: string }>",
+        "createFakeW3wClient(handler: (call: RecordedCall) => unknown): { client: W3wClient; calls: RecordedCall[] }",
+        "BSC_CHAIN_ID = 56; BINANCE_CHAIN_ID = \"56\"; W3W_BASE_URL = \"https://web3.binance.com\""
+      ],
+      "gate": {
+        "run": "pnpm --filter @pop/core exec vitest run src/tx/pipeline.test.ts",
+        "expect": "PASS — `Test Files  1 passed (1)` and `Tests  6 passed (6)`"
+      },
+      "commit": "feat(core): simulate-sign-broadcast pipeline over the Transaction API with MEV protection",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    },
+    {
+      "id": "core:11",
+      "subsystem": "core",
+      "title": "Package entry points and the strict typecheck",
+      "plan": "docs/superpowers/plans/2026-10-07-core.md",
+      "depends_on": [
+        "core:2",
+        "core:3",
+        "core:4",
+        "core:5",
+        "core:6",
+        "core:7",
+        "core:8",
+        "core:9",
+        "core:10"
+      ],
+      "effort": "low",
+      "files": {
+        "create": [
+          "packages/core/src/index.ts",
+          "packages/core/src/browser.ts"
+        ],
+        "modify": [],
+        "test": [
+          "packages/core/src/entry.test.ts"
+        ]
+      },
+      "provides": [
+        "import { … } from \"@pop/core\" (Node entry: every core module)",
+        "import { … } from \"@pop/core/browser\" (browser-safe: chain constants and client, token catalog, amount formatting, registry ABI/types/readers; type-only StatusInfo, RwaToken, TokenTrade, Simulation, QuoteRoute)"
+      ],
+      "requires": [
+        "signW3wRequest(input: { secret: string; timestamp: string; method: string; requestPath: string; body: string }): string",
+        "createW3wClient(options: { apiKey: string; apiSecret: string; baseUrl?: string; fetchImpl?: typeof fetch; now?: () => Date; clock?: () => number; sleep?: (ms: number) => Promise<void>; onTiming?: (timing: W3wTiming) => void; maxRetries?: number; recvWindowMs?: number }): W3wClient",
+        "createTelemetryRecorder(options: { filePath: string; service: string; now?: () => Date }): (timing: W3wTiming) => void",
+        "getRwaTokens(client: W3wClient, params?: { platformId?: \"ondo\" | \"bstock\" }): Promise<RwaToken[]>",
+        "getQuote(client: W3wClient, params: { fromToken: string; toToken: string; amount: bigint; userWalletAddress: string }): Promise<QuoteRoute[]>",
+        "TOKEN_CATALOG: readonly TokenInfo[] (675 tokens: 87 bStocks, 458 Ondo, 130 xStocks; 547 PLAIN, 128 XSTOCK)",
+        "toShares(raw: bigint, tokenToShareRatio: string, maxFractionDigits?: number): string",
+        "readLatestCalls(client: RegistryReader, registry: Address, limit: number): Promise<{ total: number; calls: CallView[] }>",
+        "sendWithTransactionApi(params: { w3w: W3wClient; client: PipelineClient; signer: TxSigner; tx: { to: Address; data: Hex; value?: bigint; gas?: bigint; gasPrice?: bigint }; mev: boolean; gasBufferPercent?: number; receiptTimeoutMs?: number; clock?: () => number }): Promise<{ txHash: Hex; orderId: string; receipt: TransactionReceipt; simulation: Simulation; timings: { simulateMs: number; broadcastMs: number; confirmMs: number } }>"
+      ],
+      "gate": {
+        "run": "pnpm --filter @pop/core run verify",
+        "expect": "PASS — `tsc` prints no errors, then `Test Files  11 passed (11)` and `Tests  59 passed (59)`"
+      },
+      "commit": "feat(core): Node and browser entry points; strict typecheck clean",
+      "human_gate": false,
+      "allow_empty": false,
+      "status": "pending"
+    }
+  ]
+}
