@@ -156,6 +156,70 @@ contract CallRegistry {
         emit CallPosted(callId, msg.sender, token, amount, agentId, hasAgent, note);
     }
 
+    // ───────────────────────────── lifecycle ─────────────────────────────
+
+    /// @notice Anyone may make an exit permanent while the call is open and no longer HOLDING.
+    function recordExit(uint256 callId) external {
+        Call storage c = _existing(callId);
+        if (c.closedBlock != 0) revert CallNotOpen(callId);
+        if (c.exitBlock != 0) revert ExitAlreadyRecorded(callId);
+        (Status live, uint256 base) = _live(c);
+        if (live == Status.HOLDING) revert StillHolding(callId);
+        _markExit(callId, c, live, base);
+        if (c.hasAgent) _writeExitFeedback(callId, c.agentId, live);
+    }
+
+    /// @notice The caller ends a call. heldThrough is true only if no exit was ever recorded
+    /// and the caller is still HOLDING; otherwise the exit is recorded now (if it was not already).
+    function close(uint256 callId) external {
+        Call storage c = _existing(callId);
+        if (c.caller != msg.sender) revert NotCaller(callId);
+        if (c.closedBlock != 0) revert CallNotOpen(callId);
+        (Status live, uint256 base) = _live(c);
+        bool exitWasRecorded = c.exitBlock != 0;
+        bool held = !exitWasRecorded && live == Status.HOLDING;
+        bool recordsExitNow = !exitWasRecorded && live != Status.HOLDING;
+        if (recordsExitNow) _markExit(callId, c, live, base);
+        c.heldThrough = held;
+        c.closedBlock = uint64(block.number);
+        _openCallPlusOne[c.caller][c.token] = 0;
+        emit CallClosed(callId, held);
+        if (c.hasAgent) {
+            if (recordsExitNow) {
+                _writeExitFeedback(callId, c.agentId, live);
+            } else if (held) {
+                _writeFeedback(callId, c.agentId, HELD_VALUE, "held");
+            }
+        }
+    }
+
+    function _markExit(uint256 callId, Call storage c, Status live, uint256 base) internal {
+        c.exitBlock = uint64(block.number);
+        c.exitStatus = live;
+        emit ExitRecorded(callId, live, base, msg.sender);
+    }
+
+    function _writeExitFeedback(uint256 callId, uint256 agentId, Status live) internal {
+        if (live == Status.EXITED) {
+            _writeFeedback(callId, agentId, EXITED_VALUE, "exited");
+        } else {
+            _writeFeedback(callId, agentId, TRIMMED_VALUE, "trimmed");
+        }
+    }
+
+    /// @dev State is final before this external call. The gas floor stops anyone from starving the
+    /// feedback call on purpose; a registry-side revert is caught and reported, never propagated.
+    function _writeFeedback(uint256 callId, uint256 agentId, int128 value, string memory tag2) internal {
+        if (gasleft() < FEEDBACK_GAS + FEEDBACK_GAS_RESERVE) revert InsufficientGas();
+        try IAgentReputationRegistry(reputationRegistry).giveFeedback{gas: FEEDBACK_GAS}(
+            agentId, value, 0, INTEGRITY_TAG, tag2, "", "", bytes32(callId)
+        ) {
+            emit FeedbackWritten(callId, agentId, value, tag2);
+        } catch {
+            emit FeedbackFailed(callId, agentId);
+        }
+    }
+
     // ───────────────────────────── views ─────────────────────────────
 
     function callCount() external view returns (uint256) {
