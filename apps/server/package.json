@@ -1,0 +1,19 @@
+{
+  "name": "@pop/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/main.ts",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json",
+    "verify": "tsc -p tsconfig.json && vitest run"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.19.17",
+    "@pop/core": "workspace:*",
+    "hono": "^4.13.13",
+    "viem": "^2.57.3",
+    "zod": "^3.25.76"
+  }
+}
