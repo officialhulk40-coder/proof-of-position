@@ -1,0 +1,25 @@
+# dependencies and build output
+node_modules/
+dist/
+coverage/
+.vite/
+*.tsbuildinfo
+
+# secrets — env files hold names in *.example only
+.env
+.env.*
+!.env.example
+*.env
+!*.env.example
+
+# local agent state
+.studio/
+.pop-follower/
+
+# local DevEx telemetry (copy figures into DEVEX_LOG.md by hand)
+devex/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.log

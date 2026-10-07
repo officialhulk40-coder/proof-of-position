@@ -1,0 +1,7 @@
+# The Agent Studio workspace under agents/popanalyst/ is deliberately NOT listed: it keeps its own
+# generated pnpm workspace and links @pop/core with "link:".
+packages:
+  - "packages/*"
+  - "apps/*"
+  - "agents/follower"
+  - "scripts/demo"

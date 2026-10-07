@@ -1,0 +1,19 @@
+{
+  "name": "@pop/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./browser": "./src/browser.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json",
+    "verify": "tsc -p tsconfig.json && vitest run"
+  },
+  "dependencies": {
+    "viem": "^2.57.3",
+    "zod": "^3.25.76"
+  }
+}
