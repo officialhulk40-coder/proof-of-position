@@ -19,3 +19,4 @@ export * from "./registry/abis";
 export * from "./registry/types";
 export * from "./registry/read";
 export * from "./tx/pipeline";
+export * from "./tx/swap";
