@@ -82,6 +82,9 @@ the user's `bag llm topup --amount 1` failed with `x402 challenge resource does 
 Pieverse returns the relative `/v1/topup/x402`; CMC returns its URL without the query the analyst sends
 (`?pair_address=…`). Both judged x402 features (Pieverse self-funding, CMC research) are blocked until a patch or a user
 decision. Raw facts logged in DEVEX_LOG (AI stack).
+**User decision 18:30Z: option 1, a tracked `pnpm patch` of studio-runtime 0.0.14 in the analyst** (accept a relative resource
+resolved against the requested origin, or the requested URL without its query; payTo pin, asset, caps and budget unchanged).
+Routed to the orchestrator together with the RWA null-field fix.
 
 Open check: CMC x402 research must be exercised at least once (judged). The first two cycles show no CMC spend (U
 unchanged at 3.0061) and "thesis by template" (Pieverse credit $0). Watch the logs after the user's topup.
