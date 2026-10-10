@@ -46,7 +46,7 @@ Notes for the orchestrator: the README env table names `BSCSCAN_API_KEY`, but co
 | a | **contracts:11**: deploy CallRegistry on BSC mainnet, record, check | A by user override (10 Oct); C by default | closing | Bash (`cast wallet new`, `run-forge.mjs`, `deployment.mjs`), User-scope env | Fund the deployer burner | Burner only, about 0.00013 BNB of gas; immutable contract, owner = burner | **done** 10 Oct: `0x7eCB…a901`, see evidence (user's go, 10 Oct: "you do a and b steps yourself… autonomously") |
 | b | **contracts:12**: list the 675 pack tokens (7 txs) | A by user override (10 Oct); C by default | closing | Bash (`deployment.mjs probe-tokens`, `run-forge.mjs`) | none (same burner) | About 0.0025 BNB of gas; owner-only `setTokens` | **done** 10 Oct: 7 txs, 675 tokens, `tokens=6/6` (same go; viem fallback, see evidence) |
 | c | **agents:12**: analyst wallet, Pieverse paid model, CMC trust, budget | C | closing | user terminal (`bag` 0.0.14); concierge runs `check-studio-setup.mjs` | Install `bag`, `wallet new`, fund (≈0.005 BNB, 10 USDT, 2 U), `llm activate`, `topup 1`, `x402 trust cmc`: **confirm only if the payee is `0x3C5f3a6cE224BB89D72f5EB4232ecC27F67B3eeA`**; `budget enable --max-per-day-usd 1 --max-per-topup-usd 1 --max-per-month-usd 5`; `bag doctor` | Real funds on a burner; budget caps the spend at $1/day | **done** 10 Oct: gate PASS 6/6 (CMC trust ran locally once DNS cleared); `llm topup --amount 1` still optional, the user's |
-| d | **launch:5**: Singapore VPS, deploy, smoke S1 | C | closing | user (VPS, DNS, secrets, `docker compose`); concierge runs `demo health` | Provision the VPS (Ubuntu 24.04, 2 vCPU, 4 GB); `sslip.io` name; `deploy/.env`, `server.env` (`W3W_API_KEY`, `W3W_API_SECRET`, `KEEPER_PK`), `analyst.env` (`ANALYST_ENABLED=false`); `scp -r` `.studio/`; `docker compose -f deploy/docker-compose.yml up -d --build` | **`40304` (region refusal)**: if the server log shows it, record the exact message and move region before continuing | **in progress**: local + tunnels up, S1 code 0 from India; blocked on the RWA null-field bug |
+| d | **launch:5**: Singapore VPS, deploy, smoke S1 | C | closing | user (VPS, DNS, secrets, `docker compose`); concierge runs `demo health` | Provision the VPS (Ubuntu 24.04, 2 vCPU, 4 GB); `sslip.io` name; `deploy/.env`, `server.env` (`W3W_API_KEY`, `W3W_API_SECRET`, `KEEPER_PK`), `analyst.env` (`ANALYST_ENABLED=false`); `scp -r` `.studio/`; `docker compose -f deploy/docker-compose.yml up -d --build` | **`40304` (region refusal)**: if the server log shows it, record the exact message and move region before continuing | **done** 10 Oct 19:4xZ: local + tunnels; `demo health` PASS (local and public); fix 801870c |
 | e | **launch:6**: ERC-8004 register the analyst, enable the loop | C | closing | user (`bag erc8004 register`); concierge runs `demo agent` | Run the register tx; set `ANALYST_AGENT_ID` and `ANALYST_ENABLED=true` on the VPS; restart analyst | Mainnet tx from the analyst burner | **done** 10 Oct: agent 370830; loop on; first call posted |
 | f | **launch:7**: smoke S2–S4 | C | closing | user (`demo caller buy`, `demo trades`, `demo api get`, `pop-follower`); concierge runs `devex-check S2,S3,S4` | `CALLER_PK` burner (≈5 USDT + BNB) buys 3 USDT NVDAB; **Agentic Wallet sign-in** (`baw auth signin`); `smoke --usdt 0.5 --yes` | Real trades, a few USDT; AW stays out of the judge path | pending (needs d) |
 | g | **launch:8**: S5 and the money-shot rehearsal | C | closing | user (VPS env, `demo caller …`, follower `run`); concierge runs `devex-check S5,Rehearsal` | S5: `ANALYST_HOLD_HOURS=0.1`, wait for "held through ✓", `demo agent` → integrity 100, reset to 24. Rehearsal timed against spec §10: badge ≤ 1.5 s, exit recorded ≤ 2 s, evidence ≤ 3 s, follower SELL ≤ 2 s / FINISHED ≤ 15 s; `try-gate --broadcast` on TSLAB | Real trades; one deliberate reverted tx | pending (needs e, f) |
@@ -96,6 +96,7 @@ unchanged at 3.0061) and "thesis by template" (Pieverse credit $0). Watch the lo
 | a | 0.0048980 | — | — | — | — | 2,045,457 gas = 0.000102 BNB |
 | b | 0.0040605 | — | — | — | — | 16,744,265 gas = 0.000837 BNB |
 | c | 0.000259 (user moved 0.0038 to the analyst) | — | — | 0.009 / 12 / 3.0061 | — | 0 (config only) |
+| d (19:44Z) | 0.000259 | 0.0005 | 0.002 / 5.0015 | 0.008911 / 9.0 / 3.0061 | NVDAB 0.008669 (#0), TSLAB 0.002613 (#1) | 0 (local hosting, no gas) |
 | e (18:03Z) | 0.000259 | 0.0005 | 0.002 / 5.0015 | 0.008911 / 9.0 / 3.0061 | NVDAB 0.008669 (call #0), TSLAB 0.002613 (call #1) | register 0 (sponsored); 2 cycles ≈ 0.000089 BNB gas; 3 USDT moved into positions (swap fees inside) |
 
 ## Recommended order
@@ -240,6 +241,13 @@ Non-secret values (secrets go in by name only, on the VPS):
 - Deploy note for the orchestrator: the Studio agent card's `url` comes from `AGENTCORE_RUNTIME_URL` (`src/agentCard.ts:116`),
   not `BNBAGENT_PUBLIC_URL`. `deploy/analyst.env.example` should list it, or the card advertises `http://localhost:9000/`.
   It is set in the local run script.
+- 19:3xZ: both fixes dispatched to executors on the user's instruction ("recheck agents and restart the fix"), verified by the
+  concierge (full `pnpm -r verify`, `typecheck`, `verify:analyst` 54/54, public-ready PASS) and committed separately:
+  `801870c fix(core): accept null marketStatus and underlyingName from RWA Data` and `c4f9ff7 fix(analyst): patch studio-runtime
+  0.0.14 x402 resource check for live merchants`. Server and analyst restarted.
+- **Gate: `demo health` → five PASS lines (`S1: signed RWA Data call from the server succeeded (675 tokens enriched)`), then `PASS`,
+  both with `POP_FEED_URL=http://localhost:5173` and with the public tunnel URL.** DEVEX_LOG S1 recorded. **Status: done.**
+- Deviation: plan commit `chore(launch): deploy on the Singapore VPS; S1 evidence` is replaced by an accurate local-hosting message.
 
 ### e — launch:6 (on the user's "run gate e", 10 Oct)
 - Step 1: `bag erc8004 register --endpoint https://begin-tsunami-amy-wanted.trycloudflare.com --name popanalyst

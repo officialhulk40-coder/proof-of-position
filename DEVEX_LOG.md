@@ -60,6 +60,7 @@ per-call timings; copy the figures that matter here.
 ### S1
 
 - (pending) signed GET /api/v1/dex/market/rwa/tokens?binanceChainId=56 from the VPS: code, latency.
+- 2026-10-10 local host in India (no VPS; Cloudflare quick tunnel for the public URL): signed `GET /api/v1/dex/market/rwa/tokens?binanceChainId=56` → `code 0` in 1563 ms (no 40304). On a Saturday, `/api/tokens` first came back 400: RWA Data returned `statusInfo.marketStatus: null` (closed market) for many tokens and `underlyingName: null` for 3, which the documented schema (marketStatus enum string, underlyingName string) does not allow. After the nullable fix (801870c), `/api/tokens` is undegraded with 675 tokens enriched, locally and through the tunnel.
 
 ### S2
 
