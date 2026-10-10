@@ -178,3 +178,25 @@ Non-secret values (secrets go in by name only, on the VPS):
   message and move region.
 - Concierge verification after deploy: `POP_FEED_URL=https://<PUBLIC_HOST> pnpm --filter @pop/demo run demo health` →
   five PASS lines, then `PASS`.
+
+### d — launch:5, adapted: local hosting + Cloudflare quick tunnels (user decision, 10 Oct)
+- User decision: run locally for demo day (10–11 Oct), then choose VPS vs a 24/7 Mac mini M4 at home. US-only VPS locations
+  were rejected because the Binance Web3 API restricts US server IPs (`40304`).
+- **S1 from this machine (India): `GET /api/v1/dex/market/rwa/tokens binanceChainId=56 → code 0 in 1563 ms`.** India is not
+  restricted; the result carries over to the Mac mini on the same connection.
+- Burners funded by the user (on chain): keeper 0.0005 BNB; caller 5.0015 USDT + 0.002 BNB.
+- Local services. Run scripts live in `D:\bnb-tokenized-hackathon\local-run\`, outside the repo; secrets are read at run time
+  from User env and `.studio/.env.local` and never stored.
+  - server `:8787` → `[server] listening on :8787 — registry 0x7ecb…a901, W3W on, keeper on`
+  - feed (Vite) `:5173`
+  - analyst `:9000`/`:8088` with `ANALYST_ENABLED=false`
+- `cloudflared` 2026.10.0 installed via winget on the user's go. Quick tunnels (URLs change on restart; not for judging):
+  - feed `https://hiking-researcher-root-nothing.trycloudflare.com` → 200; `/api/health` → w3w true, keeper enabled
+  - analyst `https://begin-tsunami-amy-wanted.trycloudflare.com` → agent card 200, card `url` = that URL
+- Keyless judge path verified: "Try the gate" → `Reverted: "No position, no call." via BSC eth_call`.
+- **Blocker: a product bug, routed to the orchestrator** (brief: `local-run/fix-brief-rwa-null.md`). `/api/tokens` → 400 because
+  live RWA Data returns `statusInfo.marketStatus: null` (weekend) and `underlyingName: null` (3 tokens), while
+  `packages/core/src/w3w/rwa.ts:8,25` require strings. `demo health` fails on it, so gate d stays open until the fix lands.
+- Deploy note for the orchestrator: the Studio agent card's `url` comes from `AGENTCORE_RUNTIME_URL` (`src/agentCard.ts:116`),
+  not `BNBAGENT_PUBLIC_URL`. `deploy/analyst.env.example` should list it, or the card advertises `http://localhost:9000/`.
+  It is set in the local run script.
