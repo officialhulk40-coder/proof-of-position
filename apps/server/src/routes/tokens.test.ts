@@ -54,6 +54,18 @@ describe("GET /api/tokens", () => {
     expect(calls).toHaveLength(2);
   });
 
+  it("accepts null marketStatus / underlyingName and degrades on an unparseable payload", async () => {
+    const { client } = createFakeW3wClient(() => [{ ...nvdabRwa, underlyingName: null, statusInfo: { openState: false, marketStatus: null } }]);
+    const ok = (await (await createApp(makeDeps({ w3w: client }), [tokensRoutes]).request("/api/tokens")).json()) as TokensResponse;
+    expect(ok.degraded).toBeNull();
+    const { client: bad } = createFakeW3wClient(() => [{ ...nvdabRwa, tokenSymbol: 5 }]);
+    const res = await createApp(makeDeps({ w3w: bad }), [tokensRoutes]).request("/api/tokens");
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as TokensResponse;
+    expect(body.degraded?.code).toBe(-2);
+    expect(body.tokens).toHaveLength(675);
+  });
+
   it("degrades to the bare catalog when the API refuses (40304) or is not configured", async () => {
     const { client } = createFakeW3wClient(() => {
       throw new W3wApiError({ code: 40304, msg: "Service not available due to compliance restriction", httpStatus: 200, endpoint: "/api/v1/dex/market/rwa/tokens" });

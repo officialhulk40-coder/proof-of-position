@@ -1,5 +1,6 @@
 import { TOKEN_CATALOG, W3wApiError, getRwaTokens, type RwaToken, type StatusInfo, type TokenInfo } from "@pop/core";
 import { Hono } from "hono";
+import { ZodError } from "zod";
 import { createTtlCache } from "../cache";
 import type { ServerDeps } from "../deps";
 
@@ -27,8 +28,9 @@ export async function loadTokens(deps: ServerDeps): Promise<TokensResponse> {
     try {
       rwa = await getRwaTokens(deps.w3w);
     } catch (error) {
-      if (!(error instanceof W3wApiError)) throw error;
-      degraded = { code: error.code, msg: error.msg };
+      if (error instanceof W3wApiError) degraded = { code: error.code, msg: error.msg };
+      else if (error instanceof ZodError) degraded = { code: -2, msg: `unexpected RWA Data payload: ${error.issues[0]?.path.join(".")}: ${error.issues[0]?.message}` };
+      else throw error;
     }
   }
   const byAddress = new Map(rwa.map((token) => [token.tokenContractAddress.toLowerCase(), token]));

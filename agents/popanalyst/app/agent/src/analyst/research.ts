@@ -63,7 +63,7 @@ export async function researchToken(deps: { w3w: W3wClient; buyWithX402: BuyWith
     if (rwa) {
       result.name = rwa.underlyingName;
       result.priceUsd = rwa.tokenPrice ?? null;
-      result.market = rwa.statusInfo ? { openState: rwa.statusInfo.openState, marketStatus: rwa.statusInfo.marketStatus, reasonMsg: rwa.statusInfo.reasonMsg ?? null } : null;
+      result.market = rwa.statusInfo ? { openState: rwa.statusInfo.openState, marketStatus: rwa.statusInfo.marketStatus ?? (rwa.statusInfo.openState ? "open" : "closed"), reasonMsg: rwa.statusInfo.reasonMsg ?? null } : null;
     } else result.notes.push("RWA Data has no entry for this token");
   } catch (error) {
     result.notes.push(`RWA Data unavailable: ${message(error)}`);

@@ -48,6 +48,16 @@ describe("RWA Data", () => {
     expect(tokens[1]?.statusInfo?.marketStatus).toBe("offhours");
   });
 
+  it("accepts null marketStatus and null underlyingName (weekend rows)", async () => {
+    const { client } = createFakeW3wClient(() => [
+      { ...rwaTokenFixture, statusInfo: { openState: false, marketStatus: null } },
+      { ...rwaTokenFixture, underlyingName: null },
+    ]);
+    const tokens = await getRwaTokens(client);
+    expect(tokens[0]?.statusInfo?.marketStatus).toBeNull();
+    expect(tokens[1]?.underlyingName).toBeNull();
+  });
+
   it("batches prices 100 addresses per request", async () => {
     const addresses = Array.from({ length: 150 }, (_, i) => `0x${i.toString(16).padStart(40, "0")}`);
     const { client, calls } = createFakeW3wClient((call) =>

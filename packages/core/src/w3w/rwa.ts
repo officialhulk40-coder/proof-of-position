@@ -5,7 +5,7 @@ import type { W3wClient } from "./client";
 /** RWA Data statusInfo. marketStatus is a free string: "offhours" is returned although undocumented. */
 export const statusInfoSchema = z.object({
   openState: z.boolean(),
-  marketStatus: z.string(),
+  marketStatus: z.string().nullable(),
   reasonCode: z.string().nullish(),
   reasonMsg: z.string().nullish(),
   nextOpenTime: z.number().nullish(),
@@ -22,7 +22,7 @@ export const rwaTokenSchema = z.object({
   tokenSymbol: z.string(),
   decimals: z.union([z.string(), z.number()]).transform((value) => Number(value)),
   underlyingTicker: z.string(),
-  underlyingName: z.string(),
+  underlyingName: z.string().nullable(),
   tokenToShareRatio: z.string(),
   statusInfo: statusInfoSchema.nullish(),
   tokenPrice: z.string().nullish(),

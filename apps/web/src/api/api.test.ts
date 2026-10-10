@@ -99,6 +99,8 @@ describe("format", () => {
       tone: "paused",
     });
     expect(marketStatusLabel({ openState: true, marketStatus: "offhours" }, "Ondo")).toEqual({ text: "Trading (offhours)", tone: "open" });
+    expect(marketStatusLabel({ openState: true, marketStatus: null }, "bStocks")).toEqual({ text: "Market open", tone: "open" });
+    expect(marketStatusLabel({ openState: false, marketStatus: null }, "bStocks")).toEqual({ text: "Market closed", tone: "closed" });
     expect(marketStatusLabel(null, "xStocks").tone).toBe("unknown");
   });
 

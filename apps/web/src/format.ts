@@ -31,9 +31,9 @@ export function marketStatusLabel(status: StatusInfo | null, issuer: string | un
     return { text: `Paused${status.reasonMsg ? ` — ${status.reasonMsg}` : ""}`, tone: "paused" };
   }
   if (status.openState) {
-    return { text: status.marketStatus === "regular" ? "Market open" : `Trading (${status.marketStatus})`, tone: "open" };
+    return { text: status.marketStatus === "regular" || status.marketStatus === null ? "Market open" : `Trading (${status.marketStatus})`, tone: "open" };
   }
-  return { text: `Closed${status.reasonMsg ? ` — ${status.reasonMsg}` : ""}`, tone: "closed" };
+  return { text: status.reasonMsg ? `Closed — ${status.reasonMsg}` : status.marketStatus === null ? "Market closed" : "Closed", tone: "closed" };
 }
 
 export function timeAgo(unixSeconds: number, nowMs: number): string {
