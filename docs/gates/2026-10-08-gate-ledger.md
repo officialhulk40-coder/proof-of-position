@@ -76,6 +76,13 @@ Deviations from the plans (applied):
   amount is ≤ the `demo balances` holding. The demo video is recorded in the same run; retakes are the user's call.
 - Follower: plan minimums only (`smoke --usdt 0.5`, `run --budget-usdt 1`).
 
+**Blocker found 18:2xZ (vendor incompatibility, routed to the orchestrator; brief `local-run/fix-brief-x402-resource.md`):**
+the user's `bag llm topup --amount 1` failed with `x402 challenge resource does not exactly match the caller-requested URL`
+(no U spent). `@bnbagent/studio-runtime@0.0.14` (latest on npm) `exactResource` requires `resource.url === requestedUrl`.
+Pieverse returns the relative `/v1/topup/x402`; CMC returns its URL without the query the analyst sends
+(`?pair_address=…`). Both judged x402 features (Pieverse self-funding, CMC research) are blocked until a patch or a user
+decision. Raw facts logged in DEVEX_LOG (AI stack).
+
 Open check: CMC x402 research must be exercised at least once (judged). The first two cycles show no CMC spend (U
 unchanged at 3.0061) and "thesis by template" (Pieverse credit $0). Watch the logs after the user's topup.
 
