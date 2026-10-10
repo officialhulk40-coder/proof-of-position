@@ -264,3 +264,13 @@ Non-secret values (secrets go in by name only, on the VPS):
   (status 1); `deployment.mjs check` → `callCount=1`.
 - Step 3 gate: `demo agent` → `agent #370830 wallet 0x8B031D852ba4358F291774aBC345ED781bc93950 ✓`, `integrity no feedback yet`, `PASS`.
 - **Status: done.** When hosting moves, run `bag erc8004 update-endpoint` (gas) and update `AGENTCORE_RUNTIME_URL`/`BNBAGENT_PUBLIC_URL`.
+
+### f — launch:7 (in progress)
+- S2 (the user ran the buy in the concierge terminal, 19:50Z): `demo caller buy --token NVDAB --usdt 3` → 0.012999 NVDAB, tx
+  [`0x7db03012…1d00a679`](https://bscscan.com/tx/0x7db03012527e58956713849ae460eb3d32be6f4242e9ac5e379ce4991d00a679)
+  (block 126886705, 19:50:30Z). Market `trades` showed it by 19:53:37Z (lag ≤ 3 min 07 s). The API ignored `walletAddressFilter`
+  (the same 100 trades from 38 wallets came back with or without it). Logged under DEVEX_LOG S2.
+- S3 (concierge, read-only): `dex-history` (528 ms) and `token/latest-pnl` (367 ms) both cover the swap. Logged under S3.
+- S4 prerequisites (`pop-follower check`): `baw 1.10.0 ✓`, `wallet CONNECTED ✓`, session expires 2026-10-12T10:49Z (38.9 h left),
+  AW BSC address `0x859fc4055d1a9879878c63f1012ec5fcafc00cf2`, **USDT balance 0**, **tradeAllTokens off** (NVDAB must be on the
+  allowed list). Waiting on the user: fund the AW and allow NVDAB, then run the smoke. It is a trade, so the user runs it.
