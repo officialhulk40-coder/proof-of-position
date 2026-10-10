@@ -44,7 +44,7 @@ Notes for the orchestrator: the README env table names `BSCSCAN_API_KEY`, but co
 | # | Gate | Tier | Pass | Tools | Human moment | Risk | Status |
 |---|---|---|---|---|---|---|---|
 | a | **contracts:11**: deploy CallRegistry on BSC mainnet, record, check | A by user override (10 Oct); C by default | closing | Bash (`cast wallet new`, `run-forge.mjs`, `deployment.mjs`), User-scope env | Fund the deployer burner | Burner only, about 0.00013 BNB of gas; immutable contract, owner = burner | **done** 10 Oct: `0x7eCB…a901`, see evidence (user's go, 10 Oct: "you do a and b steps yourself… autonomously") |
-| b | **contracts:12**: list the 675 pack tokens (7 txs) | A by user override (10 Oct); C by default | closing | Bash (`deployment.mjs probe-tokens`, `run-forge.mjs`) | none (same burner) | About 0.0025 BNB of gas; owner-only `setTokens` | approved (same go) |
+| b | **contracts:12**: list the 675 pack tokens (7 txs) | A by user override (10 Oct); C by default | closing | Bash (`deployment.mjs probe-tokens`, `run-forge.mjs`) | none (same burner) | About 0.0025 BNB of gas; owner-only `setTokens` | **done** 10 Oct: 7 txs, 675 tokens, `tokens=6/6` (same go; viem fallback, see evidence) |
 | c | **agents:12**: analyst wallet, Pieverse paid model, CMC trust, budget | C | closing | user terminal (`bag` 0.0.14); concierge runs `check-studio-setup.mjs` | Install `bag`, `wallet new`, fund (≈0.005 BNB, 10 USDT, 2 U), `llm activate`, `topup 1`, `x402 trust cmc`: **confirm only if the payee is `0x3C5f3a6cE224BB89D72f5EB4232ecC27F67B3eeA`**; `budget enable --max-per-day-usd 1 --max-per-topup-usd 1 --max-per-month-usd 5`; `bag doctor` | Real funds on a burner; budget caps the spend at $1/day | pending |
 | d | **launch:5**: Singapore VPS, deploy, smoke S1 | C | closing | user (VPS, DNS, secrets, `docker compose`); concierge runs `demo health` | Provision the VPS (Ubuntu 24.04, 2 vCPU, 4 GB); `sslip.io` name; `deploy/.env`, `server.env` (`W3W_API_KEY`, `W3W_API_SECRET`, `KEEPER_PK`), `analyst.env` (`ANALYST_ENABLED=false`); `scp -r` `.studio/`; `docker compose -f deploy/docker-compose.yml up -d --build` | **`40304` (region refusal)**: if the server log shows it, record the exact message and move region before continuing | pending (needs a, b, c) |
 | e | **launch:6**: ERC-8004 register the analyst, enable the loop | C | closing | user (`bag erc8004 register`); concierge runs `demo agent` | Run the register tx; set `ANALYST_AGENT_ID` and `ANALYST_ENABLED=true` on the VPS; restart analyst | Mainnet tx from the analyst burner | pending (needs d) |
@@ -82,4 +82,32 @@ Notes for the orchestrator: the README env table names `BSCSCAN_API_KEY`, but co
 - **Status: done.**
 
 ### b — contracts:12
-- Step 1: `deployment.mjs probe-tokens` → `PASS probed=675 failed=0` (19 s).
+- Step 1: `deployment.mjs probe-tokens` → `PASS probed=675 failed=0` (19 s), re-run right before listing: PASS again.
+- Step 2 as planned (`forge script ListTokens` dry-run) **failed twice** with `missing trie node` (`Failed to decode
+  return value: 0x`), about 65 s per run. Cause: the registry now exists on chain, so forge fetches each of about 675
+  storage slots from the RPC one by one (1.5–2.5 s per call from this machine). That outlives the ~1 minute of state
+  public BSC nodes keep. The planning-time "~12 s" figure came from a simulation where the registry was deployed in the
+  same fork. **Plan note for the orchestrator:** the ListTokens dry-run can't work against an already-deployed registry
+  over public RPC.
+- Fallback (concierge, documented deviation): a viem script (scratchpad, not committed) that makes the same
+  `setTokens(address[],uint8[])` calls as `ListTokens.list` (BATCH 100, PLAIN first, then XSTOCK) from the same owner
+  key. The dry-run is one `eth_call` + `estimateGas` per batch; it checks that the signer is `owner()`; after
+  broadcast each receipt's `TokenListed` events are compared token-by-token and model-by-model with `tokens.json`.
+- Dry-run: 7/7 batches simulated OK; 547 PLAIN + 128 XSTOCK; 16,885,327 gas ≈ 0.00084 BNB.
+- Step 3 broadcast (concierge, on the user's go), all `status success`, events matched:
+
+  | Batch | Tx | Block | Gas used | Events |
+  |---|---|---|---|---|
+  | 1 | [`0xf705bd60…b233a3`](https://bscscan.com/tx/0xf705bd6001918a4b2dfc9942b099acab91abefb7ff6a68dffaabff01feb233a3) | 126817464 | 2,479,732 | 100 |
+  | 2 | [`0xfb61a295…908894f`](https://bscscan.com/tx/0xfb61a29535bdc88a376b3e792445b9f5cd499b578727c9eae024c8dcd908894f) | 126817474 | 2,479,696 | 100 |
+  | 3 | [`0x16735ef3…1084ac`](https://bscscan.com/tx/0x16735ef3a5966dd1e7a4dac17facdc21294881da97c4ce39057a3207981084ac) | 126817481 | 2,479,708 | 100 |
+  | 4 | [`0x1d627291…bdfdb7d`](https://bscscan.com/tx/0x1d627291bef5f12c7b5ce0c083e91c24109b1fa8dc69a1d98c45a1296bdfdb7d) | 126817490 | 2,479,696 | 100 |
+  | 5 | [`0x3b80910f…4a86631`](https://bscscan.com/tx/0x3b80910fe8a054d6ec1b4a275472fb8f1bc334f0825a38c46731223bf4a86631) | 126817499 | 2,479,732 | 100 |
+  | 6 | [`0x71c167f0…4188a4`](https://bscscan.com/tx/0x71c167f0b93272111a2bea5411be004c66caba35c535ce0ca24dd9926b4188a4) | 126817507 | 2,479,732 | 100 |
+  | 7 | [`0x50421752…a2e8fe`](https://bscscan.com/tx/0x504217529ffc53aa6f4735c8ab713478ffd3e4c4f6ebd256303d56e1a9a2e8fe) | 126817514 | 1,865,969 | 75 |
+
+  `listed PLAIN 547 XSTOCK 128`. Deployer balance after: 0.0040605139 BNB.
+- Step 4 gate: `PASS registry=0x7ecb8700d7cc4d3cddd3fe74217228f24845a901 owner=0x0150be747ac5955566df0cd1aaf929f311463f71 callCount=0 tokens=6/6`.
+- **Status: done.**
+- Deployer leftover: the user asked for a refund to their address. Sending funds is the user's action; the exact
+  command is in the session report. `DEPLOYER_PK` (registry owner) stays in the User env for any later delisting.
