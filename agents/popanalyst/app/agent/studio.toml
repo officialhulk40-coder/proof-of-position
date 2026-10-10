@@ -27,10 +27,11 @@ kind = "evm-local"
 signer = "local"
 keystore_dir = "../../.studio/wallets"
 # address = "0x..."   # filled by `bag wallet new`
+address = "0x8B031D852ba4358F291774aBC345ED781bc93950"
 
 [llm]
 provider = "pieverse-llm"
-model = "auto/free"
+model = "auto/paid"
 
 [llm.pieverse]
 # Pieverse topup runs ONLY on BSC mainnet (chainId=56); decoupled from [network].default.
@@ -39,6 +40,7 @@ network = "bsc-mainnet"
 # zero-deposit default. `bag llm activate` creates the key with $0
 # allocation; switch to a paid model + `bag llm topup` only when you need it.
 initial_allocation_usd = 0
+key_hash = "406225f6c6eb0938aa9a088a621a5e5f63fdd89afd0b364549b41c378686e504"
 
 [llm.auto_renew]
 # hook auto-allocates from Pieverse Account Balance to the API key when Key
@@ -90,3 +92,10 @@ work_timeout_seconds = 60
 # Optional Bazaar metadata can be added later as scalar JSON fields under
 # [payments.b402_seller.bazaar]: info_json, schema_json, description,
 # and route_template.
+
+[budget]
+enabled = true
+acknowledged_at = "2026-10-10T11:28:38Z"
+max_per_topup_usd = 1.0
+max_per_day_usd = 1.0
+max_per_month_usd = 5.0
