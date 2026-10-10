@@ -96,6 +96,7 @@ unchanged at 3.0061) and "thesis by template" (Pieverse credit $0). Watch the lo
 | a | 0.0048980 | — | — | — | — | 2,045,457 gas = 0.000102 BNB |
 | b | 0.0040605 | — | — | — | — | 16,744,265 gas = 0.000837 BNB |
 | c | 0.000259 (user moved 0.0038 to the analyst) | — | — | 0.009 / 12 / 3.0061 | — | 0 (config only) |
+| f: S2+S3 (19:55Z) | 0.000259 | 0.0005 | 0.00198 / 2.0015 + NVDAB 0.012999 | 0.008911 / 9.0 / 3.0061 | NVDAB 0.008669 (#0), TSLAB 0.002613 (#1) | caller buy ≈ 0.00002 BNB gas; 3 USDT moved into NVDAB (kept for the rehearsal) |
 | d (19:44Z) | 0.000259 | 0.0005 | 0.002 / 5.0015 | 0.008911 / 9.0 / 3.0061 | NVDAB 0.008669 (#0), TSLAB 0.002613 (#1) | 0 (local hosting, no gas) |
 | e (18:03Z) | 0.000259 | 0.0005 | 0.002 / 5.0015 | 0.008911 / 9.0 / 3.0061 | NVDAB 0.008669 (call #0), TSLAB 0.002613 (call #1) | register 0 (sponsored); 2 cycles ≈ 0.000089 BNB gas; 3 USDT moved into positions (swap fees inside) |
 

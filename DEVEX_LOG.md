@@ -65,10 +65,12 @@ per-call timings; copy the figures that matter here.
 ### S2
 
 - (pending) Market trades with walletAddressFilter: fresh NVDAB swap visible after N s.
+- 2026-10-10 caller `demo caller buy --token NVDAB --usdt 3` → 0.012999342999563718 NVDAB, tx [0x7db03012…1d00a679](https://bscscan.com/tx/0x7db03012527e58956713849ae460eb3d32be6f4242e9ac5e379ce4991d00a679), block 126886705 at 19:50:30Z. `GET /api/v1/dex/market/trades` (NVDAB, limit 100) had it indexed by the first verified query at 19:53:37Z (lag ≤ 3 min 07 s; a precise figure comes from the rehearsal sell) as `type buy`, `userAddress` = caller, `dexName "Uniswap v4 (BSC)"`, `time` = block time. **`walletAddressFilter=<caller>` was not applied:** the filtered and unfiltered responses were the same 100 trades from 38 distinct `userAddress` values, so the client has to filter by `userAddress` itself. Response 511 ms, code 0.
 
 ### S3
 
 - (pending) Address Portfolio dex-history and token/latest-pnl coverage for that swap.
+- 2026-10-10 19:5xZ (≈ 3–4 min after the swap): `GET /api/v1/dex/market/portfolio/dex-history binanceChainId=56 walletAddress=<caller>` → code 0 in 528 ms; the first `transactionList` entry is the NVDAB buy (`amount 0.012999342999563719`, `valueUsd 2.997`, `price 230.55`, cursor `1791661830000` = block time); `pnlUsd null`. `GET …/portfolio/token/latest-pnl … tokenContractAddress=0x02fca66c…7436` → code 0 in 367 ms: `buyAmount 0.012999342999563718`, `buyTxCount 1`, `buyAvgPrice 230.552305`, `tokenBalanceUsd 3.0004`, `holdingDuration 229`, `isPnlSupported true`. Both cover the swap.
 
 ### S4
 
