@@ -45,7 +45,7 @@ Notes for the orchestrator: the README env table names `BSCSCAN_API_KEY`, but co
 |---|---|---|---|---|---|---|---|
 | a | **contracts:11**: deploy CallRegistry on BSC mainnet, record, check | A by user override (10 Oct); C by default | closing | Bash (`cast wallet new`, `run-forge.mjs`, `deployment.mjs`), User-scope env | Fund the deployer burner | Burner only, about 0.00013 BNB of gas; immutable contract, owner = burner | **done** 10 Oct: `0x7eCB…a901`, see evidence (user's go, 10 Oct: "you do a and b steps yourself… autonomously") |
 | b | **contracts:12**: list the 675 pack tokens (7 txs) | A by user override (10 Oct); C by default | closing | Bash (`deployment.mjs probe-tokens`, `run-forge.mjs`) | none (same burner) | About 0.0025 BNB of gas; owner-only `setTokens` | **done** 10 Oct: 7 txs, 675 tokens, `tokens=6/6` (same go; viem fallback, see evidence) |
-| c | **agents:12**: analyst wallet, Pieverse paid model, CMC trust, budget | C | closing | user terminal (`bag` 0.0.14); concierge runs `check-studio-setup.mjs` | Install `bag`, `wallet new`, fund (≈0.005 BNB, 10 USDT, 2 U), `llm activate`, `topup 1`, `x402 trust cmc`: **confirm only if the payee is `0x3C5f3a6cE224BB89D72f5EB4232ecC27F67B3eeA`**; `budget enable --max-per-day-usd 1 --max-per-topup-usd 1 --max-per-month-usd 5`; `bag doctor` | Real funds on a burner; budget caps the spend at $1/day | pending |
+| c | **agents:12**: analyst wallet, Pieverse paid model, CMC trust, budget | C | closing | user terminal (`bag` 0.0.14); concierge runs `check-studio-setup.mjs` | Install `bag`, `wallet new`, fund (≈0.005 BNB, 10 USDT, 2 U), `llm activate`, `topup 1`, `x402 trust cmc`: **confirm only if the payee is `0x3C5f3a6cE224BB89D72f5EB4232ecC27F67B3eeA`**; `budget enable --max-per-day-usd 1 --max-per-topup-usd 1 --max-per-month-usd 5`; `bag doctor` | Real funds on a burner; budget caps the spend at $1/day | **in progress** (3/6 PASS): wallet + password + paid model done by the concierge; funding, `llm activate`, `topup`, `x402 trust`, `budget enable` are the user's |
 | d | **launch:5**: Singapore VPS, deploy, smoke S1 | C | closing | user (VPS, DNS, secrets, `docker compose`); concierge runs `demo health` | Provision the VPS (Ubuntu 24.04, 2 vCPU, 4 GB); `sslip.io` name; `deploy/.env`, `server.env` (`W3W_API_KEY`, `W3W_API_SECRET`, `KEEPER_PK`), `analyst.env` (`ANALYST_ENABLED=false`); `scp -r` `.studio/`; `docker compose -f deploy/docker-compose.yml up -d --build` | **`40304` (region refusal)**: if the server log shows it, record the exact message and move region before continuing | pending (needs a, b, c) |
 | e | **launch:6**: ERC-8004 register the analyst, enable the loop | C | closing | user (`bag erc8004 register`); concierge runs `demo agent` | Run the register tx; set `ANALYST_AGENT_ID` and `ANALYST_ENABLED=true` on the VPS; restart analyst | Mainnet tx from the analyst burner | pending (needs d) |
 | f | **launch:7**: smoke S2–S4 | C | closing | user (`demo caller buy`, `demo trades`, `demo api get`, `pop-follower`); concierge runs `devex-check S2,S3,S4` | `CALLER_PK` burner (≈5 USDT + BNB) buys 3 USDT NVDAB; **Agentic Wallet sign-in** (`baw auth signin`); `smoke --usdt 0.5 --yes` | Real trades, a few USDT; AW stays out of the judge path | pending (needs d) |
@@ -111,3 +111,16 @@ Notes for the orchestrator: the README env table names `BSCSCAN_API_KEY`, but co
 - **Status: done.**
 - Deployer leftover: the user asked for a refund to their address. Sending funds is the user's action; the exact
   command is in the session report. `DEPLOYER_PK` (registry owner) stays in the User env for any later delisting.
+
+### c — agents:12
+- `bag` 0.0.14 was already installed (`bag --version` → 0.0.14).
+- `.studio/.env.local` held only empty scaffold placeholders (lengths checked, values never read), so nothing was overwritten.
+- Step 2 (concierge, on the user's go "move toward c"): `bag wallet new --generate-password` from `app/agent`.
+  Analyst wallet `0x8B031D852ba4358F291774aBC345ED781bc93950`; keystore
+  `agents/popanalyst/.studio/wallets/0x8B03…3950.json`; `WALLET_PASSWORD` in `agents/popanalyst/.studio/.env.local`
+  (both git-ignored by `agents/popanalyst/.gitignore` `.studio/`; `git status` shows only `studio.toml`).
+- `bag config set llm.model auto/paid` (concierge).
+- `check-studio-setup.mjs`: PASS wallet, PASS password, PASS paid model; FAIL Pieverse key, FAIL CMC trust,
+  FAIL budget. Those, plus funding (≈0.005 BNB, 10 USDT, 2 U), are the user's steps (spend, signup or payment authorization).
+- `studio.toml` change is held uncommitted until the gate passes (plan commit:
+  `chore(analyst): agent wallet, Pieverse paid model, CMC x402 trust and a $1/day budget`).
