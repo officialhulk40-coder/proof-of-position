@@ -29,7 +29,7 @@ Not installed locally: `bag`, `baw`, `docker`. agents:12 needs `bag`, launch:7 n
 | Check | Result |
 |---|---|
 | `node contracts/run-forge.mjs test` | PASS: 73 passed, 0 failed (on 4be3622 and again on 58f7225) |
-| `pnpm -r --if-present run verify` | 4be3622: FAIL, 1 follower test (`src/cli.test.ts:114`, tsx bin cold start 3.3–21 s against a 5 s timeout). Not a load flake: it also failed in isolation. Routed to the orchestrator and fixed in 58f7225. Re-run pending. core 63/63, demo 23/23, server 34/34, web 45/45 + vite build PASS |
+| `pnpm -r --if-present run verify` | 4be3622: FAIL, 1 follower test (`src/cli.test.ts:114`, tsx bin cold start 3.3–21 s against a 5 s timeout). Not a load flake: it also failed in isolation. Routed to the orchestrator and fixed in 58f7225. **58f7225: PASS** (follower 34/34). core 63/63, demo 23/23, server 34/34, web 45/45 + vite build PASS |
 | `npm run verify:analyst` | PASS: 23/23 |
 | README conformance (launch Task 9) | PASS |
 | `node scripts/public-ready.mjs` | PASS (2 expected WARN lines: the removed pack files are still in git history) |
@@ -43,7 +43,7 @@ Notes for the orchestrator: the README env table names `BSCSCAN_API_KEY`, but co
 
 | # | Gate | Tier | Pass | Tools | Human moment | Risk | Status |
 |---|---|---|---|---|---|---|---|
-| a | **contracts:11**: deploy CallRegistry on BSC mainnet, record, check | A by user override (10 Oct); C by default | closing | Bash (`cast wallet new`, `run-forge.mjs`, `deployment.mjs`), User-scope env | Fund the deployer burner | Burner only, about 0.00013 BNB of gas; immutable contract, owner = burner | approved (user, 10 Oct: "you do a and b steps yourself… autonomously") |
+| a | **contracts:11**: deploy CallRegistry on BSC mainnet, record, check | A by user override (10 Oct); C by default | closing | Bash (`cast wallet new`, `run-forge.mjs`, `deployment.mjs`), User-scope env | Fund the deployer burner | Burner only, about 0.00013 BNB of gas; immutable contract, owner = burner | **done** 10 Oct: `0x7eCB…a901`, see evidence (user's go, 10 Oct: "you do a and b steps yourself… autonomously") |
 | b | **contracts:12**: list the 675 pack tokens (7 txs) | A by user override (10 Oct); C by default | closing | Bash (`deployment.mjs probe-tokens`, `run-forge.mjs`) | none (same burner) | About 0.0025 BNB of gas; owner-only `setTokens` | approved (same go) |
 | c | **agents:12**: analyst wallet, Pieverse paid model, CMC trust, budget | C | closing | user terminal (`bag` 0.0.14); concierge runs `check-studio-setup.mjs` | Install `bag`, `wallet new`, fund (≈0.005 BNB, 10 USDT, 2 U), `llm activate`, `topup 1`, `x402 trust cmc`: **confirm only if the payee is `0x3C5f3a6cE224BB89D72f5EB4232ecC27F67B3eeA`**; `budget enable --max-per-day-usd 1 --max-per-topup-usd 1 --max-per-month-usd 5`; `bag doctor` | Real funds on a burner; budget caps the spend at $1/day | pending |
 | d | **launch:5**: Singapore VPS, deploy, smoke S1 | C | closing | user (VPS, DNS, secrets, `docker compose`); concierge runs `demo health` | Provision the VPS (Ubuntu 24.04, 2 vCPU, 4 GB); `sslip.io` name; `deploy/.env`, `server.env` (`W3W_API_KEY`, `W3W_API_SECRET`, `KEEPER_PK`), `analyst.env` (`ANALYST_ENABLED=false`); `scp -r` `.studio/`; `docker compose -f deploy/docker-compose.yml up -d --build` | **`40304` (region refusal)**: if the server log shows it, record the exact message and move region before continuing | pending (needs a, b, c) |
@@ -71,6 +71,15 @@ Notes for the orchestrator: the README env table names `BSCSCAN_API_KEY`, but co
 - Step 1: `run-forge.mjs test` on 58f7225: 73 passed, 0 failed.
 - Step 2 dry-run: `SIMULATION COMPLETE`, owner `0x0150…3F71`, chain 56, 2,659,094 gas at 0.05 gwei
   = 0.0001329547 BNB.
+- Funded by the user: 0.005 BNB, seen 11:03:53Z.
+- Step 3 broadcast (concierge, on the user's go): `ONCHAIN EXECUTION COMPLETE & SUCCESSFUL.`
+  CallRegistry [`0x7eCB8700D7cc4d3CddD3fe74217228F24845a901`](https://bscscan.com/address/0x7eCB8700D7cc4d3CddD3fe74217228F24845a901),
+  tx [`0xe18d650f…6aa8cf`](https://bscscan.com/tx/0xe18d650feb7b9c237dc9a79209ae515e6272ec41a45b72f8c84f995fab6aa8cf),
+  block 126816613. `cast receipt`: status 1, from the burner, 2,045,457 gas at 0.05 gwei.
+- Step 4: `recorded CallRegistry 0x7ecb…a901 (block 126816613) -> deployments/bsc-mainnet.json`.
+- Step 5 gate: `PASS registry=0x7ecb8700d7cc4d3cddd3fe74217228f24845a901 owner=0x0150be747ac5955566df0cd1aaf929f311463f71 callCount=0`.
+- Step 6 (optional BscScan source verification): not run. `ETHERSCAN_API_KEY` isn't set; nothing depends on it.
+- **Status: done.**
 
 ### b — contracts:12
 - Step 1: `deployment.mjs probe-tokens` → `PASS probed=675 failed=0` (19 s).

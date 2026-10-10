@@ -1,0 +1,9 @@
+{
+  "chainId": 56,
+  "callRegistry": "0x7ecb8700d7cc4d3cddd3fe74217228f24845a901",
+  "deployTx": "0xe18d650feb7b9c237dc9a79209ae515e6272ec41a45b72f8c84f995fab6aa8cf",
+  "deployBlock": 126816613,
+  "owner": "0x0150be747ac5955566df0cd1aaf929f311463f71",
+  "identityRegistry": "0x8004A169FB4a3325136EB29fA0ceB6D2e539a432",
+  "reputationRegistry": "0x8004BAa17C55a88189AE136b182e5fdA19dE9b63"
+}
