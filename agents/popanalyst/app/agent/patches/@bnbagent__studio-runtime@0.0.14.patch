@@ -1,0 +1,162 @@
+diff --git a/dist/chunk-ZWCUOUCH.js b/dist/chunk-ZWCUOUCH.js
+index 63391ea8f9b029c16384619951973c58f537e3c4..98cc38e7ff3e8ec2b3369eabb2a0dba99c521106 100644
+--- a/dist/chunk-ZWCUOUCH.js
++++ b/dist/chunk-ZWCUOUCH.js
+@@ -847,10 +847,47 @@ function exactResource(rawResource, requestedUrl) {
+     return null;
+   }
+   const record = cloned;
+-  if (typeof record.url !== "string" || record.url.trim() === "" || record.url !== requestedUrl || record.description !== void 0 && typeof record.description !== "string" || record.mimeType !== void 0 && typeof record.mimeType !== "string") {
++  if (typeof record.url !== "string" || record.url.trim() === "" || record.description !== void 0 && typeof record.description !== "string" || record.mimeType !== void 0 && typeof record.mimeType !== "string") {
+     return null;
+   }
+-  return record;
++  if (record.url === requestedUrl) {
++    return record;
++  }
++  const normalizedUrl = relaxedResourceUrl(record.url, requestedUrl);
++  if (normalizedUrl === null) {
++    return null;
++  }
++  return Object.freeze(Object.assign(/* @__PURE__ */ Object.create(null), record, { url: normalizedUrl }));
++}
++// PATCH(proof-of-position): live merchants answer with a relative resource.url
++// (Pieverse "/v1/topup/x402") or the query-less path of the requested URL
++// (CoinMarketCap). Accept only those shapes on the same origin + pathname, with
++// no query/hash of their own, and normalise to the absolute requested URL.
++function relaxedResourceUrl(resourceUrl, requestedUrl) {
++  if (typeof requestedUrl !== "string") return null;
++  let requested;
++  try {
++    requested = new URL(requestedUrl);
++  } catch {
++    return null;
++  }
++  if (requested.protocol !== "http:" && requested.protocol !== "https:") return null;
++  if (resourceUrl.includes("?") || resourceUrl.includes("#") || resourceUrl.includes("\\")) return null;
++  let resolved;
++  try {
++    if (resourceUrl.startsWith("/") && !resourceUrl.startsWith("//")) {
++      resolved = new URL(resourceUrl, requested.origin);
++    } else {
++      resolved = new URL(resourceUrl);
++      if (resolved.protocol !== requested.protocol || resolved.host !== requested.host) return null;
++    }
++  } catch {
++    return null;
++  }
++  if (resolved.origin !== requested.origin || resolved.pathname !== requested.pathname || resolved.username !== "" || resolved.password !== "" || resolved.search !== "" || resolved.hash !== "") {
++    return null;
++  }
++  return `${requested.origin}${requested.pathname}`;
+ }
+ function requireCallerResourceUrl(value) {
+   if (typeof value !== "string" || value.trim() === "" || value.trim() !== value || /\s/u.test(value) || value.includes("\\")) {
+diff --git a/dist/pieverse/index.cjs b/dist/pieverse/index.cjs
+index 2405e9518d9f26ec1a6e74743f732be2450e1fee..eed99686e7cbb32fedbccbf402d9ad3080c9a8d4 100644
+--- a/dist/pieverse/index.cjs
++++ b/dist/pieverse/index.cjs
+@@ -2378,10 +2378,47 @@ function exactResource(rawResource, requestedUrl) {
+     return null;
+   }
+   const record2 = cloned;
+-  if (typeof record2.url !== "string" || record2.url.trim() === "" || record2.url !== requestedUrl || record2.description !== void 0 && typeof record2.description !== "string" || record2.mimeType !== void 0 && typeof record2.mimeType !== "string") {
++  if (typeof record2.url !== "string" || record2.url.trim() === "" || record2.description !== void 0 && typeof record2.description !== "string" || record2.mimeType !== void 0 && typeof record2.mimeType !== "string") {
+     return null;
+   }
+-  return record2;
++  if (record2.url === requestedUrl) {
++    return record2;
++  }
++  const normalizedUrl = relaxedResourceUrl(record2.url, requestedUrl);
++  if (normalizedUrl === null) {
++    return null;
++  }
++  return Object.freeze(Object.assign(/* @__PURE__ */ Object.create(null), record2, { url: normalizedUrl }));
++}
++// PATCH(proof-of-position): live merchants answer with a relative resource.url
++// (Pieverse "/v1/topup/x402") or the query-less path of the requested URL
++// (CoinMarketCap). Accept only those shapes on the same origin + pathname, with
++// no query/hash of their own, and normalise to the absolute requested URL.
++function relaxedResourceUrl(resourceUrl, requestedUrl) {
++  if (typeof requestedUrl !== "string") return null;
++  let requested;
++  try {
++    requested = new URL(requestedUrl);
++  } catch {
++    return null;
++  }
++  if (requested.protocol !== "http:" && requested.protocol !== "https:") return null;
++  if (resourceUrl.includes("?") || resourceUrl.includes("#") || resourceUrl.includes("\\")) return null;
++  let resolved;
++  try {
++    if (resourceUrl.startsWith("/") && !resourceUrl.startsWith("//")) {
++      resolved = new URL(resourceUrl, requested.origin);
++    } else {
++      resolved = new URL(resourceUrl);
++      if (resolved.protocol !== requested.protocol || resolved.host !== requested.host) return null;
++    }
++  } catch {
++    return null;
++  }
++  if (resolved.origin !== requested.origin || resolved.pathname !== requested.pathname || resolved.username !== "" || resolved.password !== "" || resolved.search !== "" || resolved.hash !== "") {
++    return null;
++  }
++  return `${requested.origin}${requested.pathname}`;
+ }
+ function requireCallerResourceUrl(value) {
+   if (typeof value !== "string" || value.trim() === "" || value.trim() !== value || /\s/u.test(value) || value.includes("\\")) {
+diff --git a/dist/x402/index.cjs b/dist/x402/index.cjs
+index 2cc38b968e14d3f5ab0f5cdf41c7adeb29764f4a..fe856728b047f909e539255b17ce38b2a4c72fbf 100644
+--- a/dist/x402/index.cjs
++++ b/dist/x402/index.cjs
+@@ -1946,10 +1946,47 @@ function exactResource(rawResource, requestedUrl) {
+     return null;
+   }
+   const record2 = cloned;
+-  if (typeof record2.url !== "string" || record2.url.trim() === "" || record2.url !== requestedUrl || record2.description !== void 0 && typeof record2.description !== "string" || record2.mimeType !== void 0 && typeof record2.mimeType !== "string") {
++  if (typeof record2.url !== "string" || record2.url.trim() === "" || record2.description !== void 0 && typeof record2.description !== "string" || record2.mimeType !== void 0 && typeof record2.mimeType !== "string") {
+     return null;
+   }
+-  return record2;
++  if (record2.url === requestedUrl) {
++    return record2;
++  }
++  const normalizedUrl = relaxedResourceUrl(record2.url, requestedUrl);
++  if (normalizedUrl === null) {
++    return null;
++  }
++  return Object.freeze(Object.assign(/* @__PURE__ */ Object.create(null), record2, { url: normalizedUrl }));
++}
++// PATCH(proof-of-position): live merchants answer with a relative resource.url
++// (Pieverse "/v1/topup/x402") or the query-less path of the requested URL
++// (CoinMarketCap). Accept only those shapes on the same origin + pathname, with
++// no query/hash of their own, and normalise to the absolute requested URL.
++function relaxedResourceUrl(resourceUrl, requestedUrl) {
++  if (typeof requestedUrl !== "string") return null;
++  let requested;
++  try {
++    requested = new URL(requestedUrl);
++  } catch {
++    return null;
++  }
++  if (requested.protocol !== "http:" && requested.protocol !== "https:") return null;
++  if (resourceUrl.includes("?") || resourceUrl.includes("#") || resourceUrl.includes("\\")) return null;
++  let resolved;
++  try {
++    if (resourceUrl.startsWith("/") && !resourceUrl.startsWith("//")) {
++      resolved = new URL(resourceUrl, requested.origin);
++    } else {
++      resolved = new URL(resourceUrl);
++      if (resolved.protocol !== requested.protocol || resolved.host !== requested.host) return null;
++    }
++  } catch {
++    return null;
++  }
++  if (resolved.origin !== requested.origin || resolved.pathname !== requested.pathname || resolved.username !== "" || resolved.password !== "" || resolved.search !== "" || resolved.hash !== "") {
++    return null;
++  }
++  return `${requested.origin}${requested.pathname}`;
+ }
+ function requireCallerResourceUrl(value) {
+   if (typeof value !== "string" || value.trim() === "" || value.trim() !== value || /\s/u.test(value) || value.includes("\\")) {
