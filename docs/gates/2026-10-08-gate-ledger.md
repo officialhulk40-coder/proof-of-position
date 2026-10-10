@@ -58,6 +58,36 @@ Notes for the orchestrator: the README env table names `BSCSCAN_API_KEY`, but co
 | m | Main form https://forms.gle/yToDUzaDMwWnq6R6A | A (fill) / C (Submit) | closing | claude-in-chrome | Paste contact email + prize wallet; **Fill and Submit are two separate goes**; logged-in identity re-read first | Wrong identity or missing video = not scored | pending (needs h, i, k, l) |
 | n | Freeze | — | closing | none | No pushes after **12:00 UTC Sun 11 Oct** | A late push breaks "repos frozen" | pending |
 
+## Cost control (user directive, 10 Oct 18:00Z)
+
+Goal: pass every gate and keep every judged feature visible, spending as little as possible, then sweep everything back
+at the end of judging. **Authority:** trades, swaps, topups and transfers are the user's (the concierge prepares and
+verifies); config edits, checks and read-only calls are the concierge's. Burner balances are reported after each gate
+(`local-run/balances.sh`). No broadcast unless gas is ≈ 0.05 gwei. Hosting: local + quick tunnels for demo day, then the
+Mac mini for judging; no paid VPS unless the user says so.
+
+Deviations from the plans (applied):
+- Analyst for demo day and judging: `ANALYST_WATCHLIST=NVDAB,TSLAB`, `ANALYST_BUY_USDT=1`, `ANALYST_HOLD_HOURS=48`,
+  `ANALYST_INTERVAL_MIN=60` (plan: 4 tokens, 2 USDT, 24 h, 30 min). S5 keeps `HOLD_HOURS=0.1` for one round trip in gate g.
+  Applied 18:00Z; log `loop started: every 60 min, 1 USDT per call, hold 48 h, watchlist NVDAB,TSLAB`.
+- Pieverse budget: `bag budget enable --max-per-day-usd 1 --max-per-topup-usd 1 --max-per-month-usd 2` (was 5/month);
+  `check-studio-setup.mjs` still PASS. `bag llm topup --amount 1` stays the user's (one only).
+- Caller (gate g, planned): no second 3-USDT buy. The S2 NVDAB from gate f is reused for the rehearsal; the declared post
+  amount is ≤ the `demo balances` holding. The demo video is recorded in the same run; retakes are the user's call.
+- Follower: plan minimums only (`smoke --usdt 0.5`, `run --budget-usdt 1`).
+
+Open check: CMC x402 research must be exercised at least once (judged). The first two cycles show no CMC spend (U
+unchanged at 3.0061) and "thesis by template" (Pieverse credit $0). Watch the logs after the user's topup.
+
+### Balances and cost per gate
+
+| After | deployer BNB | keeper BNB | caller BNB / USDT | analyst BNB / USDT / U | analyst positions | Gate cost |
+|---|---|---|---|---|---|---|
+| a | 0.0048980 | — | — | — | — | 2,045,457 gas = 0.000102 BNB |
+| b | 0.0040605 | — | — | — | — | 16,744,265 gas = 0.000837 BNB |
+| c | 0.000259 (user moved 0.0038 to the analyst) | — | — | 0.009 / 12 / 3.0061 | — | 0 (config only) |
+| e (18:03Z) | 0.000259 | 0.0005 | 0.002 / 5.0015 | 0.008911 / 9.0 / 3.0061 | NVDAB 0.008669 (call #0), TSLAB 0.002613 (call #1) | register 0 (sponsored); 2 cycles ≈ 0.000089 BNB gas; 3 USDT moved into positions (swap fees inside) |
+
 ## Recommended order
 
 1. a + b (concierge, now) ∥ c (user). 2. d → e. 3. f → g; record g as the demo video (h).

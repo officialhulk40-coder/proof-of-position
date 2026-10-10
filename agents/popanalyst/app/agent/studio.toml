@@ -95,10 +95,10 @@ work_timeout_seconds = 60
 
 [budget]
 enabled = true
-acknowledged_at = "2026-10-10T11:28:38Z"
+acknowledged_at = "2026-10-10T18:00:44Z"
 max_per_topup_usd = 1.0
 max_per_day_usd = 1.0
-max_per_month_usd = 5.0
+max_per_month_usd = 2.0
 
 [payments.x402.merchants.cmc]
 domain = "pro-api.coinmarketcap.com"
