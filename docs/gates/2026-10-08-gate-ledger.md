@@ -45,7 +45,7 @@ Notes for the orchestrator: the README env table names `BSCSCAN_API_KEY`, but co
 |---|---|---|---|---|---|---|---|
 | a | **contracts:11**: deploy CallRegistry on BSC mainnet, record, check | A by user override (10 Oct); C by default | closing | Bash (`cast wallet new`, `run-forge.mjs`, `deployment.mjs`), User-scope env | Fund the deployer burner | Burner only, about 0.00013 BNB of gas; immutable contract, owner = burner | **done** 10 Oct: `0x7eCB…a901`, see evidence (user's go, 10 Oct: "you do a and b steps yourself… autonomously") |
 | b | **contracts:12**: list the 675 pack tokens (7 txs) | A by user override (10 Oct); C by default | closing | Bash (`deployment.mjs probe-tokens`, `run-forge.mjs`) | none (same burner) | About 0.0025 BNB of gas; owner-only `setTokens` | **done** 10 Oct: 7 txs, 675 tokens, `tokens=6/6` (same go; viem fallback, see evidence) |
-| c | **agents:12**: analyst wallet, Pieverse paid model, CMC trust, budget | C | closing | user terminal (`bag` 0.0.14); concierge runs `check-studio-setup.mjs` | Install `bag`, `wallet new`, fund (≈0.005 BNB, 10 USDT, 2 U), `llm activate`, `topup 1`, `x402 trust cmc`: **confirm only if the payee is `0x3C5f3a6cE224BB89D72f5EB4232ecC27F67B3eeA`**; `budget enable --max-per-day-usd 1 --max-per-topup-usd 1 --max-per-month-usd 5`; `bag doctor` | Real funds on a burner; budget caps the spend at $1/day | **in progress** (3/6 PASS): wallet + password + paid model done by the concierge; funding, `llm activate`, `topup`, `x402 trust`, `budget enable` are the user's |
+| c | **agents:12**: analyst wallet, Pieverse paid model, CMC trust, budget | C | closing | user terminal (`bag` 0.0.14); concierge runs `check-studio-setup.mjs` | Install `bag`, `wallet new`, fund (≈0.005 BNB, 10 USDT, 2 U), `llm activate`, `topup 1`, `x402 trust cmc`: **confirm only if the payee is `0x3C5f3a6cE224BB89D72f5EB4232ecC27F67B3eeA`**; `budget enable --max-per-day-usd 1 --max-per-topup-usd 1 --max-per-month-usd 5`; `bag doctor` | Real funds on a burner; budget caps the spend at $1/day | **in progress** (4/6 PASS): wallet, password, paid model, budget done. Left: `llm activate` + U funding + `topup` (user); `x402 trust cmc` blocked by ISP DNS on this machine (see evidence) |
 | d | **launch:5**: Singapore VPS, deploy, smoke S1 | C | closing | user (VPS, DNS, secrets, `docker compose`); concierge runs `demo health` | Provision the VPS (Ubuntu 24.04, 2 vCPU, 4 GB); `sslip.io` name; `deploy/.env`, `server.env` (`W3W_API_KEY`, `W3W_API_SECRET`, `KEEPER_PK`), `analyst.env` (`ANALYST_ENABLED=false`); `scp -r` `.studio/`; `docker compose -f deploy/docker-compose.yml up -d --build` | **`40304` (region refusal)**: if the server log shows it, record the exact message and move region before continuing | pending (needs a, b, c) |
 | e | **launch:6**: ERC-8004 register the analyst, enable the loop | C | closing | user (`bag erc8004 register`); concierge runs `demo agent` | Run the register tx; set `ANALYST_AGENT_ID` and `ANALYST_ENABLED=true` on the VPS; restart analyst | Mainnet tx from the analyst burner | pending (needs d) |
 | f | **launch:7**: smoke S2–S4 | C | closing | user (`demo caller buy`, `demo trades`, `demo api get`, `pop-follower`); concierge runs `devex-check S2,S3,S4` | `CALLER_PK` burner (≈5 USDT + BNB) buys 3 USDT NVDAB; **Agentic Wallet sign-in** (`baw auth signin`); `smoke --usdt 0.5 --yes` | Real trades, a few USDT; AW stays out of the judge path | pending (needs d) |
@@ -124,3 +124,34 @@ Notes for the orchestrator: the README env table names `BSCSCAN_API_KEY`, but co
   FAIL budget. Those, plus funding (≈0.005 BNB, 10 USDT, 2 U), are the user's steps (spend, signup or payment authorization).
 - `studio.toml` change is held uncommitted until the gate passes (plan commit:
   `chore(analyst): agent wallet, Pieverse paid model, CMC x402 trust and a $1/day budget`).
+- User funded the analyst: on chain 0.005 BNB, 12 USDT, 0 U.
+- The user asked the concierge to swap 2 USDT→U, run `llm activate`, `llm topup` and the rest. The swap and the topup are
+  trades/payments and `llm activate` creates a Pieverse account and key, so they stay the user's. Config-only steps were run on
+  the user's explicit go:
+  - `bag budget enable --max-per-day-usd 1 --max-per-topup-usd 1 --max-per-month-usd 5` → `[budget] enabled = true`, caps 1/1/5.
+  - `bag x402 trust cmc --pay-to 0x3C5f3a6cE224BB89D72f5EB4232ecC27F67B3eeA --yes` → **failed twice**:
+    `could not obtain a 402 challenge from https://pro-api.coinmarketcap.com/x402/v3/…: The operation was aborted due to timeout`.
+    Root cause: **this machine's ISP DNS (Reliance Jio, AS55836) answers `pro-api.coinmarketcap.com` with `49.44.79.236`,
+    a Jio-owned address.** Cloudflare DoH resolves it to CloudFront (`dq4fzes75m7bc.cloudfront.net`). coinmarketcap.com and
+    api.coinmarketcap.com time out the same way, while google.com answers in 1.6 s. Not circumvented by the concierge
+    (that would mean DNS/hosts changes). Options: the user runs it from another network/DNS, or it runs on the Singapore VPS.
+- `bag doctor` funding warnings: **BNB 0.005 < 0.02 wanted** ("each on-chain action reserves ≈ 0.006 BNB worst-case", which
+  affects `bag erc8004 register` in gate e); **U 0 < 2 wanted** for Pieverse auto-renew (topup chunk × 2), plus 1 U for the
+  first topup and CMC x402 calls → about 3 U.
+- Gate check now: PASS wallet, PASS password, PASS paid model, PASS budget; **FAIL Pieverse key**, **FAIL CMC trust**.
+
+### d — launch:5 runbook (prepared, not started; needs c PASS)
+Non-secret values (secrets go in by name only, on the VPS):
+- `deploy/.env`: `PUBLIC_HOST=<vps-ip-with-dashes>.sslip.io`, `REGISTRY_ADDRESS=0x7ecb8700d7cc4d3cddd3fe74217228f24845a901`,
+  `BSC_RPC_URLS` optional.
+- `deploy/server.env`: `REGISTRY_ADDRESS` (same), `W3W_API_KEY`, `W3W_API_SECRET`, `KEEPER_PK` (new burner, a few cents of BNB),
+  `CORS_ORIGINS=https://<PUBLIC_HOST>`; the rest optional.
+- `deploy/analyst.env`: `REGISTRY_ADDRESS` (same), `W3W_API_KEY`, `W3W_API_SECRET`, `ANALYST_ENABLED=false`,
+  `BNBAGENT_PUBLIC_URL=https://<PUBLIC_HOST>/agent`, `POP_FEED_URL=https://<PUBLIC_HOST>`.
+- `agents/popanalyst/.studio/` copied with `scp -r` (holds the analyst keystore and `.env.local`); compose mounts it.
+- **Blockers to plan for:** (1) the repo is private, so the VPS needs read access to clone it (a read-only deploy key or
+  `gh auth login` on the VPS) or a `git bundle` copied over scp. (2) The analyst reads `studio.toml` from the clone, so c's
+  `studio.toml` must be committed and pushed **before** the clone. (3) If the server log shows `40304`, record the exact
+  message and move region.
+- Concierge verification after deploy: `POP_FEED_URL=https://<PUBLIC_HOST> pnpm --filter @pop/demo run demo health` →
+  five PASS lines, then `PASS`.
