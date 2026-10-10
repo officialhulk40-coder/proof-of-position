@@ -200,3 +200,18 @@ Non-secret values (secrets go in by name only, on the VPS):
 - Deploy note for the orchestrator: the Studio agent card's `url` comes from `AGENTCORE_RUNTIME_URL` (`src/agentCard.ts:116`),
   not `BNBAGENT_PUBLIC_URL`. `deploy/analyst.env.example` should list it, or the card advertises `http://localhost:9000/`.
   It is set in the local run script.
+
+### e — launch:6 (on the user's "run gate e", 10 Oct)
+- Step 1: `bag erc8004 register --endpoint https://begin-tsunami-amy-wanted.trycloudflare.com --name popanalyst
+  --description "Proof of Position analyst: buys a bStock, then posts the call it holds"` → **agent id 370830**.
+  Tx [`0xea887946…c1478d629`](https://bscscan.com/tx/0xea887946e4a3cc6479e7c133ac6ae6ec96c587db4927f06de25a0cfc1478d629),
+  block 126870519, status 1, gas sponsored (effectiveGasPrice 0). The CLI timed out waiting ("broadcast but not confirmed
+  yet") although the tx was mined; stale `[identity] pending_*` cleared with `clear-pending --force` after checking the
+  receipt; `identity.endpoint` recorded. On chain: `ownerOf(370830)` = `getAgentWallet(370830)` = `0x8B03…3950`.
+- Step 2 (local equivalent of the VPS env edit): `ANALYST_AGENT_ID=370830`, `ANALYST_ENABLED=true` in
+  `local-run/run-analyst.ps1`; log: `[analyst] loop started: every 30 min, 2 USDT per call, hold 24 h, watchlist NVDAB,TSLAB,AAPLB,SPYB`.
+  First cycle: `posted call #0: LONG NVDAB 0.008668 (thesis by template)`, tx
+  [`0x317d224a…51ba94b9`](https://bscscan.com/tx/0x317d224a0aac1b783dc4425998808552a2c5a133300e19fd65fc727251ba94b9)
+  (status 1); `deployment.mjs check` → `callCount=1`.
+- Step 3 gate: `demo agent` → `agent #370830 wallet 0x8B031D852ba4358F291774aBC345ED781bc93950 ✓`, `integrity no feedback yet`, `PASS`.
+- **Status: done.** When hosting moves, run `bag erc8004 update-endpoint` (gas) and update `AGENTCORE_RUNTIME_URL`/`BNBAGENT_PUBLIC_URL`.
