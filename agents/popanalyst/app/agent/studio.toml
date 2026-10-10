@@ -99,3 +99,13 @@ acknowledged_at = "2026-10-10T11:28:38Z"
 max_per_topup_usd = 1.0
 max_per_day_usd = 1.0
 max_per_month_usd = 5.0
+
+[payments.x402.merchants.cmc]
+domain = "pro-api.coinmarketcap.com"
+pay_to = "0x3C5f3a6cE224BB89D72f5EB4232ecC27F67B3eeA"
+assets = ["0xcE24439F2D9C6a2289F741120FE202248B666666", "0x8d0D000Ee44948FC98c9B98A4FA4921476f08B0d"]
+per_call_cap_usd = 0.02
+verified = true
+
+[wallet.signing]
+extra_domains = [[56, "0xcE24439F2D9C6a2289F741120FE202248B666666"], [56, "0x8d0D000Ee44948FC98c9B98A4FA4921476f08B0d"]]
