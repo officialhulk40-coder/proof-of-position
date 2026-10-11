@@ -1,5 +1,5 @@
 import { ADDRESSES, formatUnits18 } from "@pop/core";
-import { getMarketOrder, marketSwap, txLock, walletStatus, type BawRunner } from "./baw";
+import { findMarketOrder, getMarketOrder, marketSwap, txLock, walletStatus, type BawRunner } from "./baw";
 
 export interface ExecutorDeps {
   baw: BawRunner;
@@ -56,14 +56,27 @@ async function waitUnlocked(deps: ExecutorDeps): Promise<void> {
 }
 
 /** Submits one market order and polls it to FINISHED or FAILED: a submitted order is not a fill. */
-async function runOrder(deps: ExecutorDeps, order: { fromTokenQty: string; fromToken: string; toToken: string }): Promise<OrderOutcome & { status: string }> {
+async function runOrder(
+  deps: ExecutorDeps,
+  order: { fromTokenQty: string; fromToken: string; toToken: string },
+  exclude: ReadonlySet<string> = new Set(),
+): Promise<OrderOutcome & { status: string }> {
   await waitUnlocked(deps);
   const submittedAt = deps.now();
-  const orderId = await marketSwap(deps.baw, { ...order, slippage: "auto", mev: true });
+  let orderId = await marketSwap(deps.baw, { ...order, slippage: "auto", mev: true });
   const deadline = submittedAt + (deps.timeoutMs ?? 90_000);
   for (;;) {
     await deps.sleep(deps.pollMs ?? 2_000);
-    const state = await getMarketOrder(deps.baw, orderId);
+    let state = await getMarketOrder(deps.baw, orderId);
+    if (!state) {
+      // Live, the swap has returned an id that `list --orderId` never finds: match the order by pair and amount.
+      const found = await findMarketOrder(deps.baw, { ...order, since: submittedAt - 60_000, exclude });
+      if (found) {
+        deps.log(`order ${orderId} is not found by id; tracking order ${found.orderId} (same pair and amount)`);
+        orderId = found.orderId;
+        state = found;
+      }
+    }
     if (state && (state.status === "FINISHED" || state.status === "FAILED")) {
       return { orderId, txHash: state.txHash ?? null, status: state.status, submittedAt, finishedAt: deps.now() };
     }
@@ -76,7 +89,7 @@ async function runOrderWithRetry(deps: ExecutorDeps, order: { fromTokenQty: stri
   const first = await runOrder(deps, order);
   if (first.status === "FINISHED") return first;
   deps.log(`${label}: order ${first.orderId} FAILED; retrying once`);
-  const second = await runOrder(deps, order);
+  const second = await runOrder(deps, order, new Set([first.orderId]));
   if (second.status === "FINISHED") return second;
   throw new OrderFailedError(`${label}: order ${second.orderId} FAILED twice`);
 }

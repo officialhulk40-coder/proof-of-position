@@ -61,6 +61,14 @@ export function createBawRunner(options: { bin?: string; timeoutMs?: number } = 
     });
 }
 
+/**
+ * Order ids are 20-digit integers, past Number.MAX_SAFE_INTEGER: if baw ever prints one as a bare JSON
+ * number, JSON.parse would round it. Quote every numeric orderId first so all digits survive.
+ */
+export function quoteOrderIds(raw: string): string {
+  return raw.replace(/("orderId"\s*:\s*)(-?\d+)(?=\s*[,}\]])/g, '$1"$2"');
+}
+
 const envelopeSchema = z.object({ success: z.boolean(), data: z.unknown().optional() }).passthrough();
 
 /** The CLI's own error text, verbatim: error.message / message / msg, else the whole JSON. */
@@ -79,7 +87,7 @@ export async function bawJson<T>(runner: BawRunner, args: readonly string[], sch
   const result = await runner([...args, "--json"]);
   let parsed: unknown;
   try {
-    parsed = JSON.parse(result.stdout.trim());
+    parsed = JSON.parse(quoteOrderIds(result.stdout.trim()));
   } catch {
     throw new BawError(`${command} printed no JSON (exit ${result.code}): ${(result.stderr || result.stdout).trim().slice(0, 400)}`);
   }
@@ -158,8 +166,10 @@ export const marketOrderSchema = z
     orderId: orderIdSchema,
     status: z.string(),
     txHash: z.string().nullish(),
+    fromToken: z.string().nullish(),
     fromTokenQty: z.string().nullish(),
     toToken: z.string().nullish(),
+    bookTime: z.string().nullish(),
   })
   .passthrough();
 export type MarketOrder = z.infer<typeof marketOrderSchema>;
@@ -168,4 +178,56 @@ export type MarketOrder = z.infer<typeof marketOrderSchema>;
 export async function getMarketOrder(runner: BawRunner, orderId: string): Promise<MarketOrder | null> {
   const data = await bawJson(runner, ["market-order", "list", "--orderId", orderId], z.object({ list: z.array(marketOrderSchema) }));
   return data.list.find((order) => order.orderId === orderId) ?? null;
+}
+
+/** "0.500000000000000000" and "0.5" are the same amount: drop leading/trailing zeros for comparison. */
+function normalizeQty(qty: string): string {
+  let value = qty.trim();
+  if (value.includes(".")) value = value.replace(/0+$/, "").replace(/\.$/, "");
+  value = value.replace(/^0+(?=\d)/, "");
+  return value === "" ? "0" : value;
+}
+
+/**
+ * Fallback when `--orderId <id>` misses (live: the swap returned an id the order list does not know):
+ * lists recent BSC market orders for the pair and returns the newest one with the submitted amount.
+ */
+export async function findMarketOrder(
+  runner: BawRunner,
+  params: { fromToken: string; toToken: string; fromTokenQty: string; since: number; exclude?: ReadonlySet<string> },
+): Promise<MarketOrder | null> {
+  const args = [
+    "market-order",
+    "list",
+    "--binanceChainId",
+    "56",
+    "--fromToken",
+    params.fromToken,
+    "--toToken",
+    params.toToken,
+    "--startTime",
+    String(Math.max(0, Math.floor(params.since))),
+    "--pageSize",
+    "20",
+  ];
+  const data = await bawJson(runner, args, z.object({ list: z.array(marketOrderSchema) }));
+  const qty = normalizeQty(params.fromTokenQty);
+  const matches = data.list
+    .map((order, index) => ({ order, index }))
+    .filter(
+      ({ order }) =>
+        order.fromToken?.toLowerCase() === params.fromToken.toLowerCase() &&
+        order.toToken?.toLowerCase() === params.toToken.toLowerCase() &&
+        order.fromTokenQty != null &&
+        normalizeQty(order.fromTokenQty) === qty &&
+        !params.exclude?.has(order.orderId),
+    );
+  const time = (order: MarketOrder) => (order.bookTime ? Date.parse(order.bookTime) : Number.NaN);
+  matches.sort((a, b) => {
+    const ta = time(a.order);
+    const tb = time(b.order);
+    if (!Number.isNaN(ta) && !Number.isNaN(tb) && ta !== tb) return tb - ta;
+    return a.index - b.index;
+  });
+  return matches[0]?.order ?? null;
 }

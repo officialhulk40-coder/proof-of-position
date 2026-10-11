@@ -63,6 +63,50 @@ describe("executeBuy", () => {
   });
 });
 
+describe("order id mismatch (live: the swap's id is unknown to list --orderId)", () => {
+  const SWAP_ID = "26101100001956594351";
+  const REAL_ID = "26101100001956594394";
+
+  it("adopts the newest list order with the same pair and amount when the id lookup misses", async () => {
+    const { executor, calls, lines } = deps(
+      {
+        "wallet tx-lock": () => ({ status: "UNLOCKED" }),
+        "market-order swap": () => ({ code: 0, stdout: `{"success":true,"data":{"orderId":${SWAP_ID}}}`, stderr: "" }),
+        "market-order list": (args) =>
+          args[2] === "--orderId"
+            ? { total: 0, list: [] }
+            : {
+                total: 3,
+                list: [
+                  { orderId: "1", fromToken: USDT, toToken: NVDAB, fromTokenQty: "0.700000000000000000", status: "FINISHED", bookTime: "2026-10-11T11:13:55+05:30" },
+                  { orderId: REAL_ID, fromToken: USDT, toToken: "0x02Fca66C1D1aFB4E2A7884261eB00F63598a7436", fromTokenQty: "0.500000000000000000", status: "FINISHED", txHash: "0x7e56", bookTime: "2026-10-11T11:13:51+05:30" },
+                  { orderId: "2", fromToken: USDT, toToken: NVDAB, fromTokenQty: "0.5", status: "FAILED", bookTime: "2026-10-11T11:10:00+05:30" },
+                ],
+              },
+      },
+      [0n, 2_169_936_093_013_576n],
+    );
+    const result = await executeBuy(executor, { token: NVDAB, budgetUsdt: "0.5" });
+    expect(result).toMatchObject({ orderId: REAL_ID, txHash: "0x7e56", quantity: 2_169_936_093_013_576n });
+    expect(calls[2]).toEqual(["market-order", "list", "--orderId", SWAP_ID, "--json"]);
+    expect(calls[3]).toEqual(["market-order", "list", "--binanceChainId", "56", "--fromToken", USDT, "--toToken", NVDAB, "--startTime", "940000", "--pageSize", "20", "--json"]);
+    expect(lines).toContain(`order ${SWAP_ID} is not found by id; tracking order ${REAL_ID} (same pair and amount)`);
+  });
+
+  it("keeps the unknown-order timeout when nothing in the list matches", async () => {
+    const { executor } = deps(
+      {
+        "wallet tx-lock": () => ({ status: "UNLOCKED" }),
+        "market-order swap": () => ({ orderId: SWAP_ID }),
+        "market-order list": (args) =>
+          args[2] === "--orderId" ? { list: [] } : { list: [{ orderId: REAL_ID, fromToken: USDT, toToken: NVDAB, fromTokenQty: "0.7", status: "FINISHED" }] },
+      },
+      [0n],
+    );
+    await expect(executeBuy(executor, { token: NVDAB, budgetUsdt: "0.5" })).rejects.toThrow(`order ${SWAP_ID} is still unknown after 90 s`);
+  });
+});
+
 describe("executeSell", () => {
   it("sells exactly the mirrored quantity back to USDT", async () => {
     const { executor, calls } = deps({ "wallet tx-lock": () => ({ status: "UNLOCKED" }), ...orders("FINISHED") }, [0n]);

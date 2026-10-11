@@ -53,6 +53,15 @@ describe("baw commands", () => {
     ]);
   });
 
+  it("keeps every digit of a 20-digit orderId printed as a bare JSON number", async () => {
+    const { runner } = scriptedBaw({
+      "market-order swap": () => ({ code: 0, stdout: '{\n  "success": true,\n  "data": {\n    "orderId": 26101100001956594351\n  }\n}', stderr: "" }),
+      "market-order list": () => ({ code: 0, stdout: '{"success":true,"data":{"list":[{"orderId":26101100001956594394,"status":"FINISHED"}]}}', stderr: "" }),
+    });
+    expect(await marketSwap(runner, { fromTokenQty: "0.5", fromToken: USDT, toToken: NVDAB })).toBe("26101100001956594351");
+    expect((await getMarketOrder(runner, "26101100001956594394"))?.orderId).toBe("26101100001956594394");
+  });
+
   it("fails when the wallet has no BSC address", async () => {
     const { runner } = scriptedBaw({ "wallet address": () => ({ addresses: [{ binanceChainId: "CT_501", address: "Sol1" }] }) });
     await expect(bscAddress(runner)).rejects.toThrow("no BSC (56) address");
