@@ -52,8 +52,8 @@ Notes for the orchestrator: the README env table names `BSCSCAN_API_KEY`, but co
 | g | **launch:8**: S5 and the money-shot rehearsal | C | closing | user (VPS env, `demo caller …`, follower `run`); concierge runs `devex-check S5,Rehearsal` | S5: `ANALYST_HOLD_HOURS=0.1`, wait for "held through ✓", `demo agent` → integrity 100, reset to 24. Rehearsal timed against spec §10: badge ≤ 1.5 s, exit recorded ≤ 2 s, evidence ≤ 3 s, follower SELL ≤ 2 s / FINISHED ≤ 15 s; `try-gate --broadcast` on TSLAB | Real trades; one deliberate reverted tx | pending (needs e, f) |
 | h | Demo video (demo-studio's deliverable) | C | closing | claude-in-chrome (check only) | Record and upload; set sharing to public | A video that won't play logged-out doesn't count | pending. Check: plays logged-out, ≤ 4:00 |
 | i | Resolve TBDs: README (6) + draft (8) + feed screenshot | A | closing | Bash, claude-in-chrome (screenshot) | none | Wrong address/id: verified from `deployments/bsc-mainnet.json` and BscScan | pending (needs a–h) |
-| j | Pre-public | A (sweep) / C (decision) | closing | Bash, git | **Decide: squashed snapshot vs history rewrite** (both presented at the gate) | Telegram invite link at pack `INDEX.md:101`; SharePay mention in `prior-art.md` lines 28–29 and 57; secret sweep of the tree **and** history | pending |
-| k | Repo public flip | C (explicit go) | closing | `gh repo edit --visibility public` after `gh auth status` | Your go | Irreversible exposure: j must be done first | pending (needs j) |
+| j | Pre-public | A (sweep) / C (decision) | closing | Bash, git | **Decide: squashed snapshot vs history rewrite** (both presented at the gate) | Telegram invite link at pack `INDEX.md:101`; SharePay mention in `prior-art.md` lines 28–29 and 57; secret sweep of the tree **and** history | **done** 11 Oct 11:09Z: history rewrite (user choice), see evidence |
+| k | Repo public flip | C (explicit go) | closing | `gh repo edit --visibility public` after `gh auth status` | Your go | Irreversible exposure: j must be done first | **done** 11 Oct 11:10:15Z: PUBLIC, logged-out 200 (user go: "make repo public right now") |
 | l | DevEx report (**goes FIRST**) | C (human-written) | closing | none: the concierge points to `DEVEX_LOG.md` only | You write and submit https://forms.gle/EUQ39xf54GHjC2ys5 | AI-written reports are rejected; same contact email as registration | pending |
 | m | Main form https://forms.gle/yToDUzaDMwWnq6R6A | A (fill) / C (Submit) | closing | claude-in-chrome | Paste contact email + prize wallet; **Fill and Submit are two separate goes**; logged-in identity re-read first | Wrong identity or missing video = not scored | pending (needs h, i, k, l) |
 | n | Freeze | — | closing | none | No pushes after **12:00 UTC Sun 11 Oct** | A late push breaks "repos frozen" | pending |
@@ -306,3 +306,24 @@ Non-secret values (secrets go in by name only, on the VPS):
 - CMC x402: telemetry `cmcPaidUsd: 0.01` on #3 and #4, but no U left the wallet for CMC (unsettled). Not claimed on screen.
 - Cost since gate f: 1 U (Pieverse credit, treated as spent); analyst positions now NVDAB #2, TSLAB #3, AAPLB #4 (1 USDT each,
   recoverable); gas ≈ 0.00004 BNB. Analyst 0.008713 BNB / 8.9979 USDT / 2.0061 U.
+
+### j, k: pre-public and public flip (11 Oct)
+- User's go at 10:58Z: "make repo public right now". Gate j was still pending, so the concierge asked first. The user chose a
+  **history rewrite** (not a squashed snapshot) and **genericizing the rival project's name and angle**.
+- Secret sweep, tree and all history: no env file, keystore, `.studio/` or key file was ever tracked. The only 64-hex values
+  in history are public constants (a domain separator, a type hash, a Chainlink feed id).
+- Backup before the rewrite: a `git bundle --all` of the old history (HEAD `c531987`), kept off-repo in the concierge's scratchpad.
+- Rewrite (11:02–11:09Z): `git filter-branch --index-filter` over all 97 commits of `main`. In every commit it drops the two
+  pack files (the rival team's brief, the builder-Telegram notes), removes the Telegram invite link from the pack
+  `INDEX.md`, and genericizes the rival project's name and angle in `INDEX.md`, `prior-art.md` and the idea-forge brief.
+  Old vs new HEAD differs in those 3 docs only (11+ / 14-); code is byte-identical; author dates are unchanged.
+- Verified on the new history: 0 commits touch the two files; 0 commits contain a `t.me/+` link; 0 hits for the rival's name
+  or angle in the three docs. The bare file name survives only as a reference in the spec, launch plan, manifest,
+  `public-ready.mjs`, the draft and this ledger (outside the user's chosen scope).
+- `git push --force-with-lease=main:c531987` → `c531987...dfaa13b main (forced update)`. Remote refs: only `main`; 0 PRs.
+  `node scripts/public-ready.mjs` → PASS with no WARN lines.
+- `gh auth status` → officialhulk40-coder. `gh repo edit --visibility public` at 11:10:15Z → `PUBLIC`. Logged-out curl:
+  repo page 200, API 200, raw README 200.
+- **Consequence:** every commit hash before `dfaa13b` changed. Short hashes cited earlier in this ledger, `DEVEX_LOG.md` and
+  the runsheet point to pre-rewrite commits; find the same commit by its subject and date. Any other clone (VPS, other
+  sessions) must `git fetch && git reset --hard origin/main` before it commits; it must never push its old history.
