@@ -18,7 +18,13 @@ describe("DEVEX_LOG.md", () => {
   });
 
   it("starts with pending placeholders only", () => {
-    expect(devexProblems(log, ["S1", "S5"])).toEqual(["S1: no evidence yet", "S5: no evidence yet"]);
+    const pending = `## Smoke evidence\n\n### S1\n\n- (pending) x\n\n### S5\n\n- (pending) y\n`;
+    expect(devexProblems(pending, ["S1", "S5"])).toEqual(["S1: no evidence yet", "S5: no evidence yet"]);
+  });
+
+  it("passes once S1 and S5 carry evidence", () => {
+    const evidence = `## Smoke evidence\n\n### S1\n\n- (pending) x\n- 2026-10-09 call: code 0 in 412 ms\n\n### S5\n\n- 2026-10-10 ok\n`;
+    expect(devexProblems(evidence, ["S1", "S5"])).toEqual([]);
   });
 });
 
