@@ -48,7 +48,7 @@ Notes for the orchestrator: the README env table names `BSCSCAN_API_KEY`, but co
 | c | **agents:12**: analyst wallet, Pieverse paid model, CMC trust, budget | C | closing | user terminal (`bag` 0.0.14); concierge runs `check-studio-setup.mjs` | Install `bag`, `wallet new`, fund (≈0.005 BNB, 10 USDT, 2 U), `llm activate`, `topup 1`, `x402 trust cmc`: **confirm only if the payee is `0x3C5f3a6cE224BB89D72f5EB4232ecC27F67B3eeA`**; `budget enable --max-per-day-usd 1 --max-per-topup-usd 1 --max-per-month-usd 5`; `bag doctor` | Real funds on a burner; budget caps the spend at $1/day | **done** 10 Oct: gate PASS 6/6 (CMC trust ran locally once DNS cleared); `llm topup --amount 1` still optional, the user's |
 | d | **launch:5**: Singapore VPS, deploy, smoke S1 | C | closing | user (VPS, DNS, secrets, `docker compose`); concierge runs `demo health` | Provision the VPS (Ubuntu 24.04, 2 vCPU, 4 GB); `sslip.io` name; `deploy/.env`, `server.env` (`W3W_API_KEY`, `W3W_API_SECRET`, `KEEPER_PK`), `analyst.env` (`ANALYST_ENABLED=false`); `scp -r` `.studio/`; `docker compose -f deploy/docker-compose.yml up -d --build` | **`40304` (region refusal)**: if the server log shows it, record the exact message and move region before continuing | **done** 10 Oct 19:4xZ: local + tunnels; `demo health` PASS (local and public); fix 801870c |
 | e | **launch:6**: ERC-8004 register the analyst, enable the loop | C | closing | user (`bag erc8004 register`); concierge runs `demo agent` | Run the register tx; set `ANALYST_AGENT_ID` and `ANALYST_ENABLED=true` on the VPS; restart analyst | Mainnet tx from the analyst burner | **done** 10 Oct: agent 370830; loop on; first call posted |
-| f | **launch:7**: smoke S2–S4 | C | closing | user (`demo caller buy`, `demo trades`, `demo api get`, `pop-follower`); concierge runs `devex-check S2,S3,S4` | `CALLER_PK` burner (≈5 USDT + BNB) buys 3 USDT NVDAB; **Agentic Wallet sign-in** (`baw auth signin`); `smoke --usdt 0.5 --yes` | Real trades, a few USDT; AW stays out of the judge path | pending (needs d) |
+| f | **launch:7**: smoke S2–S4 | C | closing | user (`demo caller buy`, `demo trades`, `demo api get`, `pop-follower`); concierge runs `devex-check S2,S3,S4` | `CALLER_PK` burner (≈5 USDT + BNB) buys 3 USDT NVDAB; **Agentic Wallet sign-in** (`baw auth signin`); `smoke --usdt 0.5 --yes` | Real trades, a few USDT; AW stays out of the judge path | **done** 11 Oct 06:04Z: devex-check S2,S3,S4 PASS |
 | g | **launch:8**: S5 and the money-shot rehearsal | C | closing | user (VPS env, `demo caller …`, follower `run`); concierge runs `devex-check S5,Rehearsal` | S5: `ANALYST_HOLD_HOURS=0.1`, wait for "held through ✓", `demo agent` → integrity 100, reset to 24. Rehearsal timed against spec §10: badge ≤ 1.5 s, exit recorded ≤ 2 s, evidence ≤ 3 s, follower SELL ≤ 2 s / FINISHED ≤ 15 s; `try-gate --broadcast` on TSLAB | Real trades; one deliberate reverted tx | pending (needs e, f) |
 | h | Demo video (demo-studio's deliverable) | C | closing | claude-in-chrome (check only) | Record and upload; set sharing to public | A video that won't play logged-out doesn't count | pending. Check: plays logged-out, ≤ 4:00 |
 | i | Resolve TBDs: README (6) + draft (8) + feed screenshot | A | closing | Bash, claude-in-chrome (screenshot) | none | Wrong address/id: verified from `deployments/bsc-mainnet.json` and BscScan | pending (needs a–h) |
@@ -96,6 +96,7 @@ unchanged at 3.0061) and "thesis by template" (Pieverse credit $0). Watch the lo
 | a | 0.0048980 | — | — | — | — | 2,045,457 gas = 0.000102 BNB |
 | b | 0.0040605 | — | — | — | — | 16,744,265 gas = 0.000837 BNB |
 | c | 0.000259 (user moved 0.0038 to the analyst) | — | — | 0.009 / 12 / 3.0061 | — | 0 (config only) |
+| f done (11 Oct 06:04Z) | 0.000259 | 0.0005 | 0.00198 / 2.0015 + NVDAB 0.012999 | 0.008911 / 9.0 / 3.0061 | NVDAB 0.008669 (#0), TSLAB 0.002613 (#1); AW 0.000488 BNB / 1.4996 USDT | AW round trip ≈ 0.0004 USDT + ≈ 0.0001 BNB gas |
 | f: S2+S3 (19:55Z) | 0.000259 | 0.0005 | 0.00198 / 2.0015 + NVDAB 0.012999 | 0.008911 / 9.0 / 3.0061 | NVDAB 0.008669 (#0), TSLAB 0.002613 (#1) | caller buy ≈ 0.00002 BNB gas; 3 USDT moved into NVDAB (kept for the rehearsal) |
 | d (19:44Z) | 0.000259 | 0.0005 | 0.002 / 5.0015 | 0.008911 / 9.0 / 3.0061 | NVDAB 0.008669 (#0), TSLAB 0.002613 (#1) | 0 (local hosting, no gas) |
 | e (18:03Z) | 0.000259 | 0.0005 | 0.002 / 5.0015 | 0.008911 / 9.0 / 3.0061 | NVDAB 0.008669 (call #0), TSLAB 0.002613 (call #1) | register 0 (sponsored); 2 cycles ≈ 0.000089 BNB gas; 3 USDT moved into positions (swap fees inside) |
@@ -274,3 +275,16 @@ Non-secret values (secrets go in by name only, on the VPS):
 - S4 prerequisites (`pop-follower check`): `baw 1.10.0 ✓`, `wallet CONNECTED ✓`, session expires 2026-10-12T10:49Z (38.9 h left),
   AW BSC address `0x859fc4055d1a9879878c63f1012ec5fcafc00cf2`, **USDT balance 0**, **tradeAllTokens off** (NVDAB must be on the
   allowed list). Waiting on the user: fund the AW and allow NVDAB, then run the smoke. It is a trade, so the user runs it.
+- 2026-10-11: the session restart at ~05:4xZ stopped the local services and tunnels. They were restarted (tunnels are now
+  detached `cloudflared` processes): feed `https://ads-cams-possess-flows.trycloudflare.com`, analyst
+  `https://surplus-lived-picture-diagnostic.trycloudflare.com`. `demo health` PASS again over the new feed URL. The ERC-8004
+  endpoint still names the old tunnel; it gets updated once before submission (the user's call).
+- S4: the user ran `pop-follower smoke --usdt 0.5 --yes` (tradeAllTokens on). The buy filled, but the follower exited
+  "order …594351 still unknown": baw's printed order id is not the id `market-order list` knows (…594394). Fixed by an executor
+  (concierge-verified, `838022c fix(follower): track the real Agentic Wallet order when the swap's id is unknown`). The sell leg
+  was run by the user with `baw market-order swap`. The first two attempts were refused with `[30003001] Insufficient balance`
+  (the AW had 0.000085 BNB for gas); the user added 0.0005 BNB.
+  BUY `…594394` 0.5 USDT → 0.00217 NVDAB, tx 0x7e56b884…61e3f5, ≈ 2 s. SELL `…630463` → 0.49959 USDT, tx 0x5c94c5b5…baf602e0, ≈ 2 s.
+- **Gate: `demo devex-check --sections S2,S3,S4` → `PASS`. Status: done.**
+- Cost of gate f: caller buy ≈ 0.00002 BNB gas (3 USDT kept as NVDAB for the rehearsal); AW round trip ≈ 0.0004 USDT
+  plus ≈ 0.0001 BNB gas; AW now 1.4996 USDT + 0.000488 BNB (enough for the rehearsal follow, budget 1 USDT).
