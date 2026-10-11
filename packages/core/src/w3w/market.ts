@@ -55,7 +55,7 @@ export function getTokenTrades(
 export const liquidityPoolSchema = z.object({
   pool: z.string(),
   protocolName: z.string().nullish(),
-  liquidityUsd: z.string(),
+  liquidityUsd: z.string().nullable(),
   poolAddress: z.string(),
 });
 export type LiquidityPool = z.infer<typeof liquidityPoolSchema>;

@@ -121,6 +121,15 @@ describe("Market", () => {
     expect(pools[0]?.poolAddress).toBe("0x8fb4243b553ac29ba088acf00b9b7da24bd6690c");
     expect(pools[0]?.liquidityUsd).toBe("4380000.00");
   });
+
+  it("accepts a pool row whose liquidityUsd is null", async () => {
+    const { client } = createFakeW3wClient(() => [
+      { pool: "NVDAB/USDT", protocolName: "PancakeSwap V3", protocolLogoUrl: null, liquidityUsd: null, poolAddress: "0x8fb4243b553ac29ba088acf00b9b7da24bd6690c", liquidityAmount: [] },
+    ]);
+    const pools = await getTopLiquidityPools(client, NVDAB);
+    expect(pools[0]?.liquidityUsd).toBeNull();
+    expect(pools[0]?.poolAddress).toBe("0x8fb4243b553ac29ba088acf00b9b7da24bd6690c");
+  });
 });
 
 describe("Wallet", () => {

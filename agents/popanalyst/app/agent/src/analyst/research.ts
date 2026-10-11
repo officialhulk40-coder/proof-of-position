@@ -16,7 +16,7 @@ export interface Research {
   name: string | null;
   priceUsd: string | null;
   market: { openState: boolean; marketStatus: string; reasonMsg: string | null } | null;
-  pool: { address: string; protocol: string | null; liquidityUsd: string } | null;
+  pool: { address: string; protocol: string | null; liquidityUsd: string | null } | null;
   /** A one-line digest of the paid CMC pair quote, and what it cost. */
   cmc: { summary: string; paidUsd: number | null } | null;
   /** What could not be fetched (research degrades, it never blocks a cycle). */

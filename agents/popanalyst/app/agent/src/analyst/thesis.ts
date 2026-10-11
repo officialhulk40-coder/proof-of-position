@@ -24,7 +24,7 @@ function facts(research: Research): string {
   if (research.name) lines.push(`company: ${research.name}`);
   if (research.priceUsd) lines.push(`token price: $${research.priceUsd}`);
   if (research.market) lines.push(`market: ${research.market.openState ? "open" : "closed"} (${research.market.marketStatus}${research.market.reasonMsg ? `, ${research.market.reasonMsg}` : ""})`);
-  if (research.pool) lines.push(`deepest pool: ${research.pool.protocol ?? "DEX"} with $${research.pool.liquidityUsd} liquidity`);
+  if (research.pool) lines.push(`deepest pool: ${research.pool.protocol ?? "DEX"} with ${research.pool.liquidityUsd === null ? "n/a" : `$${research.pool.liquidityUsd}`} liquidity`);
   if (research.cmc) lines.push(`CoinMarketCap pair quote: ${research.cmc.summary}`);
   return lines.join("\n");
 }
@@ -32,7 +32,7 @@ function facts(research: Research): string {
 /** The fallback when the LLM is unavailable: facts only, no hype. */
 export function templateThesis(research: Research, holdHours: number): string {
   const price = research.priceUsd ? ` at $${research.priceUsd}` : "";
-  const pool = research.pool ? `; deepest pool ${research.pool.protocol ?? "DEX"} ($${research.pool.liquidityUsd} liquidity)` : "";
+  const pool = research.pool ? `; deepest pool ${research.pool.protocol ?? "DEX"} (${research.pool.liquidityUsd === null ? "n/a" : `$${research.pool.liquidityUsd}`} liquidity)` : "";
   return clampNote(`Long ${research.ticker} (${research.symbol})${price}${pool}. Holding ~${holdHours}h; if I sell early this badge says so on-chain.`);
 }
 
