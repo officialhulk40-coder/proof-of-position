@@ -146,3 +146,4 @@ logged-out and is ≤ 4:00 (gate h), then resolves the submission draft's demo v
 | date | event | by |
 |---|---|---|
 | 2026-10-11 | scripted | demo-studio (Stage 1 only, run by the gate concierge) |
+| 2026-10-11 | approved | the user ("approve script", 06:5xZ) |
