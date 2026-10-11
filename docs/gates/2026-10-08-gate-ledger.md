@@ -327,3 +327,26 @@ Non-secret values (secrets go in by name only, on the VPS):
 - **Consequence:** every commit hash before `dfaa13b` changed. Short hashes cited earlier in this ledger, `DEVEX_LOG.md` and
   the runsheet point to pre-rewrite commits; find the same commit by its subject and date. Any other clone (VPS, other
   sessions) must `git fetch && git reset --hard origin/main` before it commits; it must never push its old history.
+
+### Hosting moved to the Mac mini M4 (2026-10-11, ~20:5xZ)
+- The user moved hosting off the laptop to a 24/7 Mac mini M4: Docker via **OrbStack**, public HTTPS via **Tailscale Funnel**.
+  Stable public URL **https://anujs-mac-mini.tail5830cd.ts.net**; analyst at `https://anujs-mac-mini.tail5830cd.ts.net/agent/`
+  (agent card `url` = that value). Laptop hosting was confirmed stopped at 20:43Z (no services, no cloudflared, ports 8787/5173/9000/8088
+  free), so only one analyst and one keeper run. The old quick-tunnel URLs above are dead.
+- ERC-8004 endpoint of agent 370830 updated from the laptop (bag + keystore there), on the user's written authorization:
+  `bag erc8004 update-endpoint --endpoint https://anujs-mac-mini.tail5830cd.ts.net/agent/`. The CLI again exited with
+  "broadcast but not confirmed yet"; the receipt check showed it mined. Tx
+  [`0xe6ce6140…44a10`](https://bscscan.com/tx/0xe6ce6140b30d75ef4f135f95f876358549842905a9a61772c8de0cde7ae44a10):
+  **status 1, block 127086998** (20:55:14Z), 109,486 gas, gas price 0 (sponsored); the analyst's BNB is unchanged (0.0087129 BNB).
+  Then `clear-pending --force` and `identity.endpoint` set in studio.toml.
+- On-chain read (IdentityRegistry `tokenURI(370830)`, base64 JSON): `services[0] = {name A2A, version 0.3.0, endpoint
+  https://anujs-mac-mini.tail5830cd.ts.net/agent/.well-known/agent-card.json}`; owner = agent wallet = `0x8B03…3950`.
+  The SDK strips the trailing slash before appending the card path; that URL returns 200 JSON.
+- Checks from the laptop against the Mac (21:02Z):
+  - `demo health` (`POP_FEED_URL=https://anujs-mac-mini.tail5830cd.ts.net`) → `/api/health ok on chain 56`, W3W keys,
+    `recordExit keeper on (0xcaC9…1a5D)`, `S1 … 675 tokens enriched`, `feed page served`, **PASS**.
+  - `demo agent` → `agent #370830 wallet 0x8B03…3950 ✓`, `integrity 100 over 2 call(s)`, **PASS**.
+  - `pop-follower check` → baw 1.10.0, wallet CONNECTED, session expires 2026-10-13T21:02Z (48 h, sliding), AW USDT 1.4986.
+- Forward-facing docs now name the Mac URL: README "Live feed", submission-draft live link + agent card, demo-script pre-flight/S8.
+  Historical ledger and DEVEX_LOG entries are unchanged.
+- Note: `cast.exe` is now blocked on the laptop by Windows Application Control; chain reads used viem instead (not changed).

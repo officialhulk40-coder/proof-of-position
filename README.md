@@ -6,7 +6,7 @@ Stock calls you can't post unless you hold the tokenized stock. The badge is rea
 ## Demo
 
 - Demo video (under 4 minutes): TBD-post-build:demo-video-url
-- Live feed: TBD-post-build:live-url
+- Live feed: https://anujs-mac-mini.tail5830cd.ts.net
 - Screenshot: TBD-post-build:feed-screenshot
 
 No wallet needed: open the live feed and press **Try the gate**. It dry-runs a LONG TESLA call from an address that holds no TSLAB, and you see the contract's real revert reason: "No position, no call."

@@ -57,7 +57,7 @@ TBD-post-build:demo-video-url
 
 ## Deployed link, or instructions a judge can run *(required — "A live URL is best. Add anything a judge needs to test it, but never share private keys or seed phrases.")*
 
-TBD-post-build:live-url
+https://anujs-mac-mini.tail5830cd.ts.net
 
 Judge path (no wallet, no keys needed):
 1. Open the live feed. Badges are read straight from BSC mainnet every block, and each card links to BscScan.
@@ -69,7 +69,7 @@ Contract and agent facts for the judge note:
 - TBD-post-build:call-registry-address
 - TBD-post-build:call-registry-deploy-tx
 - TBD-post-build:analyst-erc8004-agent-id
-- TBD-post-build:analyst-agent-card-url
+- Analyst agent card: https://anujs-mac-mini.tail5830cd.ts.net/agent/.well-known/agent-card.json
 
 ## Developer Experience Report *(required — checkbox "Yes, I have submitted it")*
 
