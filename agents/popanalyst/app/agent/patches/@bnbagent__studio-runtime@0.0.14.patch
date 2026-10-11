@@ -1,5 +1,5 @@
 diff --git a/dist/chunk-ZWCUOUCH.js b/dist/chunk-ZWCUOUCH.js
-index 63391ea8f9b029c16384619951973c58f537e3c4..98cc38e7ff3e8ec2b3369eabb2a0dba99c521106 100644
+index 63391ea8f9b029c16384619951973c58f537e3c4..3515bc71ede646159e9d4de8246adb74927851c6 100644
 --- a/dist/chunk-ZWCUOUCH.js
 +++ b/dist/chunk-ZWCUOUCH.js
 @@ -847,10 +847,47 @@ function exactResource(rawResource, requestedUrl) {
@@ -52,8 +52,25 @@ index 63391ea8f9b029c16384619951973c58f537e3c4..98cc38e7ff3e8ec2b3369eabb2a0dba9
  }
  function requireCallerResourceUrl(value) {
    if (typeof value !== "string" || value.trim() === "" || value.trim() !== value || /\s/u.test(value) || value.includes("\\")) {
+@@ -1228,10 +1265,15 @@ function assertEip3009DomainBinding(accepted, token) {
+     `x402 EIP-3009 domain metadata does not match catalog asset ${token.symbol}`
+   );
+ }
++// PATCH(proof-of-position): Pieverse's live topup 402 advertises
++// extra = { name, version } with no assetTransferMethod (the method then
++// defaults to eip3009 in transferMethod()). Accept an absent method only when
++// name AND version still match the catalog EIP-3009 domain exactly; a present
++// method must still be "eip3009".
+ function eip3009DomainMatchesCatalog(route, token) {
+   const extra = typeof route.extra === "object" && route.extra !== null && !Array.isArray(route.extra) ? route.extra : null;
+   const domain = token.eip3009Domain;
+-  return extra !== null && domain !== null && domain !== void 0 && extra.assetTransferMethod === "eip3009" && extra.name === domain.name && extra.version === domain.version;
++  return extra !== null && domain !== null && domain !== void 0 && (extra.assetTransferMethod === "eip3009" || extra.assetTransferMethod === void 0) && typeof extra.name === "string" && typeof extra.version === "string" && extra.name === domain.name && extra.version === domain.version;
+ }
+ async function doRequest(fetchImpl, method, url, jsonBody, headers, timeoutSeconds) {
+   const init = {
 diff --git a/dist/pieverse/index.cjs b/dist/pieverse/index.cjs
-index 2405e9518d9f26ec1a6e74743f732be2450e1fee..eed99686e7cbb32fedbccbf402d9ad3080c9a8d4 100644
+index 2405e9518d9f26ec1a6e74743f732be2450e1fee..4d04de93af9054f8794badf1da02301e961ba2fa 100644
 --- a/dist/pieverse/index.cjs
 +++ b/dist/pieverse/index.cjs
 @@ -2378,10 +2378,47 @@ function exactResource(rawResource, requestedUrl) {
@@ -106,8 +123,25 @@ index 2405e9518d9f26ec1a6e74743f732be2450e1fee..eed99686e7cbb32fedbccbf402d9ad30
  }
  function requireCallerResourceUrl(value) {
    if (typeof value !== "string" || value.trim() === "" || value.trim() !== value || /\s/u.test(value) || value.includes("\\")) {
+@@ -2759,10 +2796,15 @@ function assertEip3009DomainBinding(accepted, token) {
+     `x402 EIP-3009 domain metadata does not match catalog asset ${token.symbol}`
+   );
+ }
++// PATCH(proof-of-position): Pieverse's live topup 402 advertises
++// extra = { name, version } with no assetTransferMethod (the method then
++// defaults to eip3009 in transferMethod()). Accept an absent method only when
++// name AND version still match the catalog EIP-3009 domain exactly; a present
++// method must still be "eip3009".
+ function eip3009DomainMatchesCatalog(route, token) {
+   const extra = typeof route.extra === "object" && route.extra !== null && !Array.isArray(route.extra) ? route.extra : null;
+   const domain = token.eip3009Domain;
+-  return extra !== null && domain !== null && domain !== void 0 && extra.assetTransferMethod === "eip3009" && extra.name === domain.name && extra.version === domain.version;
++  return extra !== null && domain !== null && domain !== void 0 && (extra.assetTransferMethod === "eip3009" || extra.assetTransferMethod === void 0) && typeof extra.name === "string" && typeof extra.version === "string" && extra.name === domain.name && extra.version === domain.version;
+ }
+ async function doRequest(fetchImpl, method, url, jsonBody, headers, timeoutSeconds) {
+   const init = {
 diff --git a/dist/x402/index.cjs b/dist/x402/index.cjs
-index 2cc38b968e14d3f5ab0f5cdf41c7adeb29764f4a..fe856728b047f909e539255b17ce38b2a4c72fbf 100644
+index 2cc38b968e14d3f5ab0f5cdf41c7adeb29764f4a..ca10ff206f6d1ad980361b5e66adfab6213a061a 100644
 --- a/dist/x402/index.cjs
 +++ b/dist/x402/index.cjs
 @@ -1946,10 +1946,47 @@ function exactResource(rawResource, requestedUrl) {
@@ -160,3 +194,20 @@ index 2cc38b968e14d3f5ab0f5cdf41c7adeb29764f4a..fe856728b047f909e539255b17ce38b2
  }
  function requireCallerResourceUrl(value) {
    if (typeof value !== "string" || value.trim() === "" || value.trim() !== value || /\s/u.test(value) || value.includes("\\")) {
+@@ -2327,10 +2364,15 @@ function assertEip3009DomainBinding(accepted, token) {
+     `x402 EIP-3009 domain metadata does not match catalog asset ${token.symbol}`
+   );
+ }
++// PATCH(proof-of-position): Pieverse's live topup 402 advertises
++// extra = { name, version } with no assetTransferMethod (the method then
++// defaults to eip3009 in transferMethod()). Accept an absent method only when
++// name AND version still match the catalog EIP-3009 domain exactly; a present
++// method must still be "eip3009".
+ function eip3009DomainMatchesCatalog(route, token) {
+   const extra = typeof route.extra === "object" && route.extra !== null && !Array.isArray(route.extra) ? route.extra : null;
+   const domain = token.eip3009Domain;
+-  return extra !== null && domain !== null && domain !== void 0 && extra.assetTransferMethod === "eip3009" && extra.name === domain.name && extra.version === domain.version;
++  return extra !== null && domain !== null && domain !== void 0 && (extra.assetTransferMethod === "eip3009" || extra.assetTransferMethod === void 0) && typeof extra.name === "string" && typeof extra.version === "string" && extra.name === domain.name && extra.version === domain.version;
+ }
+ async function doRequest(fetchImpl, method, url, jsonBody, headers, timeoutSeconds) {
+   const init = {

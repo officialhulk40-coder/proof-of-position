@@ -6,7 +6,7 @@ settings:
 
 patchedDependencies:
   '@bnbagent/studio-runtime@0.0.14':
-    hash: 542d099b07d453f3cc991163aaa938d6ab004a60251f1f0dda4a036c6ae5eb69
+    hash: 53ffd7e4d7c422a647c894f4282b6963e8df9ed90dc73391ed08632f87651594
     path: patches/@bnbagent__studio-runtime@0.0.14.patch
 
 importers:
@@ -24,7 +24,7 @@ importers:
         version: 0.6.0(typescript@5.9.3)(zod@3.25.76)
       '@bnbagent/studio-runtime':
         specifier: 0.0.14
-        version: 0.0.14(patch_hash=542d099b07d453f3cc991163aaa938d6ab004a60251f1f0dda4a036c6ae5eb69)(@bnbagent/sdk@0.6.0(typescript@5.9.3)(zod@3.25.76))(express@5.2.1)(typescript@5.9.3)(zod@3.25.76)
+        version: 0.0.14(patch_hash=53ffd7e4d7c422a647c894f4282b6963e8df9ed90dc73391ed08632f87651594)(@bnbagent/sdk@0.6.0(typescript@5.9.3)(zod@3.25.76))(express@5.2.1)(typescript@5.9.3)(zod@3.25.76)
       '@pop/core':
         specifier: link:../../../../packages/core
         version: link:../../../../packages/core
@@ -1943,7 +1943,7 @@ snapshots:
       - utf-8-validate
       - zod
 
-  '@bnbagent/studio-runtime@0.0.14(patch_hash=542d099b07d453f3cc991163aaa938d6ab004a60251f1f0dda4a036c6ae5eb69)(@bnbagent/sdk@0.6.0(typescript@5.9.3)(zod@3.25.76))(express@5.2.1)(typescript@5.9.3)(zod@3.25.76)':
+  '@bnbagent/studio-runtime@0.0.14(patch_hash=53ffd7e4d7c422a647c894f4282b6963e8df9ed90dc73391ed08632f87651594)(@bnbagent/sdk@0.6.0(typescript@5.9.3)(zod@3.25.76))(express@5.2.1)(typescript@5.9.3)(zod@3.25.76)':
     dependencies:
       '@ai-sdk/amazon-bedrock': 5.0.108(zod@3.25.76)
       '@ai-sdk/anthropic': 4.0.74(zod@3.25.76)
