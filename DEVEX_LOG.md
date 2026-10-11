@@ -75,6 +75,7 @@ per-call timings; copy the figures that matter here.
 ### S4
 
 - (pending) baw buy-and-sell round trip (pop-follower smoke): order ids, submit→FINISHED latencies.
+- 2026-10-11 05:43Z `pop-follower smoke --token NVDAB --usdt 0.5 --yes` (Agentic Wallet 0x859fc4055d1a9879878c63f1012ec5fcafc00cf2, baw 1.10.0, tradeAllTokens on): the BUY executed, but the follower exited with `order 26101100001956594351 is still unknown after 90 s`. `baw market-order swap --json` returned orderId `26101100001956594351`; `baw market-order list --orderId 26101100001956594351` → `No orders found`; `baw market-order list --binanceChainId 56` shows the only order as `26101100001956594394` (USDT → NVDAB, 0.5 USDT → 0.002169936093013576 NVDAB, FINISHED, tx 0x7e56b884…61e3f5, bookTime 2026-10-11T11:13:51+05:30). The two ids differ by 43, so this is not JS number rounding (that moves in steps of 4096 at this size): the place-order response id is not the id the order-query API knows. On-chain NVDAB received 0.002168248710365175 vs the list's 0.002169936. The follower now falls back to matching recent orders by pair + amount (838022c). Sell leg pending.
 
 ### S5
 
