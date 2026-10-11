@@ -288,3 +288,21 @@ Non-secret values (secrets go in by name only, on the VPS):
 - **Gate: `demo devex-check --sections S2,S3,S4` → `PASS`. Status: done.**
 - Cost of gate f: caller buy ≈ 0.00002 BNB gas (3 USDT kept as NVDAB for the rehearsal); AW round trip ≈ 0.0004 USDT
   plus ≈ 0.0001 BNB gas; AW now 1.4996 USDT + 0.000488 BNB (enough for the rehearsal follow, budget 1 USDT).
+
+### g — launch:8 (in progress, 11 Oct)
+- S5 06:22Z: calls #0 and #1 closed held-through, positions sold; `demo agent` → `integrity 100 over 2 call(s)`, PASS. Re-posted
+  #2 LONG NVDAB (HOLDING, needed for the money shot). Analyst reset to the judging settings (48 h hold) before its next cycle.
+- Fixes this morning (executor-built, concierge-verified): `838022c` follower order-id fallback; `6c6e531` null `liquidityUsd`
+  (this unblocked CMC research); `95d4e38` devex test on a fixture; `3d62869` studio-runtime patch for Pieverse's U route
+  without `assetTransferMethod` (user option 1).
+- 08:03Z–08:54Z the PC slept: the app stopped the services and the quick tunnels expired. Restarted at 09:06Z with new URLs
+  (feed https://bull-pam-english-taylor.trycloudflare.com, analyst https://deutsch-advertiser-appeals-liz.trycloudflare.com);
+  `demo health` PASS; keep-awake on.
+- **Deviation (user "add AAPLB", 09:1xZ):** watchlist temporarily `NVDAB,TSLAB,AAPLB` so one cycle needed a thesis →
+  **Pieverse self-funding exercised**: `auto-topup: spent $1.00 wallet U via x402`, status confirmed, 1 U settled in tx
+  [`0x3537a74e…b280cd`](https://bscscan.com/tx/0x3537a74ed8e88989b18cdcad85fc9fae7992d9b05b2297b5c7049545e8b280cd)
+  (block 126994384, facilitator `0x1234…C78b` → U contract). Posted #4 LONG AAPLB 0.002969 (1 USDT). Watchlist restored
+  to `NVDAB,TSLAB`. `bag llm allocate --amount 1` (no wallet spend) → key_credit $1.00.
+- CMC x402: telemetry `cmcPaidUsd: 0.01` on #3 and #4, but no U left the wallet for CMC (unsettled). Not claimed on screen.
+- Cost since gate f: 1 U (Pieverse credit, treated as spent); analyst positions now NVDAB #2, TSLAB #3, AAPLB #4 (1 USDT each,
+  recoverable); gas ≈ 0.00004 BNB. Analyst 0.008713 BNB / 8.9979 USDT / 2.0061 U.

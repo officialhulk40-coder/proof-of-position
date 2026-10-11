@@ -95,7 +95,7 @@ words: 44 · planned: 18s · tone: firm · gloss: BscScan → "B-S-C scan"
 
 **S8** — The analyst is built with BNB Agent Studio. It has its own ERC-8004 identity, buys the bStock before it posts, and holds. When it closes a call it held through, the registry itself writes integrity feedback to the ERC-8004 Reputation Registry: two calls, both held, integrity one hundred.
 words: 48 · planned: 20s · tone: proud but plain · gloss: Agent Studio → "agent studio"
-*Conditional add-on, spoken only if the gate ledger has a verified CMC x402 payment (tx or log line) at record time:* "It also pays CoinMarketCap for research over x402, from its own wallet." (13 words, +5 s; trim one S2 clause to keep ≤ 240 s.)
+*Add-on (verified 2026-10-11: Pieverse auto-topup tx 0x3537a74e…b280cd):* "It even pays for its own AI: when its LLM credit runs low, it tops up Pieverse over x402 from its own wallet." (21 words, +9 s; trim one S2 clause to keep ≤ 240 s.) Do NOT claim CoinMarketCap x402 on screen: its payment has not settled on chain.
 
 **S9** — Built on the Binance Web3 API: RWA Data, Market, Trading, Transaction and Wallet, plus Agentic Wallet and Agent Studio. Main track, and both special tracks. Judges need no keys: open the feed and try the gate.
 words: 36 · planned: 15s · tone: crisp close · gloss: RWA → "R-W-A"
@@ -148,3 +148,4 @@ logged-out and is ≤ 4:00 (gate h), then resolves the submission draft's demo v
 | 2026-10-11 | scripted | demo-studio (Stage 1 only, run by the gate concierge) |
 | 2026-10-11 | approved | the user ("approve script", 06:5xZ) |
 | 2026-10-11 | superseded-edit (S5 command gains `--include-existing`: the follower otherwise starts at the current call count and would skip the caller's just-posted call; follower.ts:38) | gate concierge |
+| 2026-10-11 | superseded-edit (S8 add-on now claims the verified Pieverse self-funding tx 0x3537a74e…; the CMC claim is dropped as unsettled) | gate concierge |
